@@ -1,21 +1,17 @@
-import langchain
+from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
+from langchain_ollama import ChatOllama
+from langchain_core.prompts import PromptTemplate
 
-from langchain_openai import ChatOpenAI
-from langchain_core.messages import HumanMessage
 
-# load local model from LM Studio
-local_llm = ChatOpenAI(
-    base_url="http://127.0.0.1:1234/v1/chat",
-    api_key="lm_studio",  # Dummy key 
-    model="google/gemma-4-e4b",  # the model lm studio is serving
+local_llm = ChatOllama(
+    model="gemma4",
+    temperature=0.5,
 )
 
 # Invoke the local model
-while True:
-    user_input = input("User: ")
-    if user_input.lower() in ["quit", "exit", "bye"]:
-        break
+def invoke_local_model(user_input):
+   
     response = local_llm.invoke([
         HumanMessage(content=user_input)
     ])
-    print(response.content)
+    return response.content
