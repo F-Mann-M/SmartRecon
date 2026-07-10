@@ -1,10 +1,10 @@
 import gradio as gr
-from main import invoke_local_model
+from main import run_agent
 
 
 # Define the interface
 demo = gr.Interface(
-    fn=invoke_local_model, # Function to invoke the local model
+    fn=run_agent, # Function to invoke the local model
     inputs=gr.Textbox(label="User Input"), # Input textbox for user input
     outputs=gr.Textbox(label="Model Response"), # Output textbox for model response
 )
