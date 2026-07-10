@@ -10,8 +10,8 @@ def cli_chat_():
         if user_input.lower() in ["exit", "quit"]:
             print("Bye!")
             break
-        response = chat_agent.run_agent(user_input)
-       
+        response = chat_agent.run_agent_stream(user_input)
+
 
 if __name__ == "__main__":
     cli_chat_()

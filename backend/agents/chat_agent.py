@@ -6,14 +6,14 @@ config = {"configurable": {"thread_id": str(uuid7())}}
 
 class AgentManager():
     def __init__(self, model, tools):
+        self.config = config
         self.agent = create_agent(
             model=model,
             tools=tools,
-            checkpointer=InMemorySaver()
+            checkpointer=InMemorySaver(),
         )
-        self.config = {"configurable": {"thread_id": str(uuid7())}}  # set a unique thread_id for the session
-
-    def run_agent(self, user_input):
+        
+    def run_agent_stream(self, user_input):
         try:
             stream = self.agent.stream_events(
                 {"messages": [{"role": "user", "content": user_input}]},
@@ -22,8 +22,7 @@ class AgentManager():
             )
         except Exception as e:
             print(f"Error invoking the model: {e}")
-            return "Error invoking the model. Please try again."
-
+            
         # Process the stream events and print them in real-time
         for kind, item in stream.interleave("messages", "tool_calls"):  # interleave the messages and tool calls for real-time processing
             if kind == "messages":
@@ -37,3 +36,24 @@ class AgentManager():
                 print(f"\nTool Result: {item.output}")
 
         final_state = stream.output
+
+    def run_agent(self, user_input):
+        """
+        Run the agent with the given user input and return the response.
+        It's meant to be used in the Gradio interface where the response is returned as a string.
+        """
+        try:
+            response = self.agent.invoke(
+                {"messages": [{"role": "user", "content": user_input}]},
+                config=self.config,
+                version="v3",
+            )
+
+            # get last message from the response
+            last_message = response["messages"][-1]
+
+            return last_message.content
+        
+        except Exception as e:
+            print(f"Error invoking the model: {e}")
+            return f"Error invoking the model: {e}"

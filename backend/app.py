@@ -1,12 +1,15 @@
 import gradio as gr
-from main import run_agent
+from agents.chat_agent import AgentManager
+from agents.tools import tools
+from llm.llm_client import local_llm
 
+chat_agent = AgentManager(model=local_llm, tools=tools)
 
 # Define the interface
 demo = gr.Interface(
-    fn=run_agent, # Function to invoke the local model
-    inputs=gr.Textbox(label="User Input"), # Input textbox for user input
-    outputs=gr.Textbox(label="Model Response"), # Output textbox for model response
+    fn=chat_agent.run_agent, 
+    inputs=gr.Textbox(label="User Input"),
+    outputs=gr.Textbox(label="Model Response"),
 )
 
 # Launch the interface
