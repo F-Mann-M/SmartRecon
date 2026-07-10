@@ -1,1 +1,6 @@
 langchain-openai
+langchain-ollama
+gradio
+
+# pip install -qU langchain-ollama
+# curl -fsSL https://ollama.com/install.sh | sh
