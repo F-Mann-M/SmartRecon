@@ -1,6 +1,7 @@
 langchain-openai
 langchain-ollama
 gradio
+langchain-text-splitters
 
 # pip install -qU langchain-ollama
-# curl -fsSL https://ollama.com/install.sh | sh
+# curl -fsSL https://ollama.com/install.sh | sh # to install ollama
