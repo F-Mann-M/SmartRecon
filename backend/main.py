@@ -4,11 +4,12 @@ from agents.chat_agent import AgentManager
 
 chat_agent = AgentManager(model=local_llm, tools=tools)
 
+
 def cli_chat_():
     while True:
         user_input = input("\nUser: ")
         if user_input.lower() in ["exit", "quit"]:
-            print("Bye!")
+            print("Bye!")d
             break
         response = chat_agent.run_agent_stream(user_input)
 
