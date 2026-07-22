@@ -2,6 +2,7 @@ import chromadb
 from chromadb.utils import embedding_functions
 import os
 
+
 client = chromadb.Client()
 
 ef = embedding_functions.OllamaEmbeddingFunction(
@@ -38,7 +39,6 @@ def add_chunks_to_chroma(documents):
 
         # add id
         source_path = meta.get("source", "doc")
-        print(f"\nSource path name: {source_path}") 
         file_name = os.path.basename(source_path)
         ids.append(f"{file_name}_chunk_{id}")
 
@@ -47,8 +47,8 @@ def add_chunks_to_chroma(documents):
         metadatas=metadata,
         ids=ids
     )
-    print("\n=" * 50, end="")
-    print(f"Chroma collection {collection.name}")
+
+    print(f"\nChroma collection: {collection.name}")
     print(collection.get())
 
     ###Test similarity search
