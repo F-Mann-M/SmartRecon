@@ -5,27 +5,49 @@ import os
 
 client = chromadb.Client()
 
-ef = embedding_functions.OllamaEmbeddingFunction(
+ollama_ef = embedding_functions.OllamaEmbeddingFunction(
         url="http://localhost:11434/api/embeddings",
         model_name="embeddinggemma"
     )
 
+def get_or_create_collection(
+        collection_name: str = "invoice", 
+        space: str = "cosine", 
+        ef_search: int = 100,
+        ef_construction: int = 100,
+        max_neighbors: int = 16,
+    ):
+    """ Gets or creates a ChromaDB collection"""
 
-collection = client.create_collection(
-    name="invoices",
-    metadata={"description": "A collection for storing invoices"},
-    configuration={
-        "hnsw": {
-            "space": "cosine",
-            "ef_search": 100,
-            "ef_construction": 100,
-            "max_neighbors": 16
-        },
-        "embedding_function": ef
-    }
-)
+    print(f"get or create collection: {collection_name}")
 
-def add_chunks_to_chroma(documents):
+    collection = client.get_or_create_collection(
+        name=collection_name,
+        embedding_function=ollama_ef,
+        metadata={"description": "A collection for storing invoices"},
+        configuration={
+            "hnsw": {
+                "space": space,
+                "ef_search": ef_search,
+                "ef_construction": ef_construction,
+                "max_neighbors": 16,
+            },
+            
+        }   
+    )
+    return collection
+
+
+def add_chunks_to_collection(documents, collection_name: str = "invoice"):
+    """
+    Takes in LangChain Documents, 
+    separates content and metadata form Documents,
+    creates unique ID for each Chunk,
+    embeds to collection
+    """
+
+    print("Add chunks to collection")
+    collection = get_or_create_collection()
     
     docs_text = []
     metadata = []
@@ -42,20 +64,40 @@ def add_chunks_to_chroma(documents):
         file_name = os.path.basename(source_path)
         ids.append(f"{file_name}_chunk_{id}")
 
+    # populate collection
     collection.add(
         documents=docs_text,
         metadatas=metadata,
-        ids=ids
-    )
+        ids=ids,
+        )
+        
 
-    print(f"\nChroma collection: {collection.name}")
-    print(collection.get())
+def similarity_search(query: str, n_results: init = 3, where_filter: dict = None) -> list:
+    """
+    Takes in query and execute basic similarity search
+    format output to downstream to llm
+    """
+    print("\nStart similarity search...")
+    collection = get_or_create_collection()
 
-    ###Test similarity search
     results = collection.query(
-        query_texts="wie ist die Rechnungsadresse?",
-        n_results=1
+        query_texts=query,
+        n_results=n_results,
+        where=where_filter
     )
 
-    print("\nSimilarity Search Results:")
-    print(results)
+    formatted_results = []
+
+    if results and results["documents"]:
+        documents = results["documents"]
+        metadatas = results["metadatas"]
+        distances = restults["distances"] if "distance" in results else []
+
+        for id in range(len(documents)):
+            formatted_results.append({
+                "content": documents[id],
+                "metadata": metadatas[id],
+                "score": distances[id] if id < len(distances) else None
+            })
+
+    return formatted_results
