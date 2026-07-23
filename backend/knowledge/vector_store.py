@@ -72,7 +72,7 @@ def add_chunks_to_collection(documents, collection_name: str = "invoice"):
         )
         
 
-def similarity_search(query: str, n_results: init = 3, where_filter: dict = None) -> list:
+def similarity_search(query: str, n_results: int = 3, where_filter: dict = None) -> list:
     """
     Takes in query and execute basic similarity search
     format output to downstream to llm
@@ -86,18 +86,18 @@ def similarity_search(query: str, n_results: init = 3, where_filter: dict = None
         where=where_filter
     )
 
-    formatted_results = []
+    if not results or not results["documents"] or not results["documents"][0]:
+            return "No relevant documents found in the knowledge base."
+    
+    # Format the retrieved chunks into a clean string for the LLM
+    documents = results["documents"][0]
+    metadatas = results["metadatas"][0]
 
-    if results and results["documents"]:
-        documents = results["documents"]
-        metadatas = results["metadatas"]
-        distances = restults["distances"] if "distance" in results else []
+    context_blocks = []
+    for doc, meta in zip(documents, metadatas):
+        source = meta.get("file_name", meta.get("source", "Unknown Source"))
+        page = meta.get("page", 0)
+        context_blocks.append(f"--- Source: {source} (Page {page}) ---\n{doc}")
 
-        for id in range(len(documents)):
-            formatted_results.append({
-                "content": documents[id],
-                "metadata": metadatas[id],
-                "score": distances[id] if id < len(distances) else None
-            })
+    return "\n\n".join(context_blocks)
 
-    return formatted_results

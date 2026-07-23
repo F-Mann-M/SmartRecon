@@ -5,8 +5,8 @@ from langgraph.checkpoint.memory import InMemorySaver
 config = {"configurable": {"thread_id": str(uuid7())}}
 
 class AgentManager():
-    def __init__(self, model, tools):
-        self.config = config
+    def __init__(self, model, tools, config=None):
+        self.config = config or {"configurable": {"thread_id": "default"}}
         self.agent = create_agent(
             model=model,
             tools=tools,
