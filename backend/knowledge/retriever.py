@@ -4,19 +4,11 @@ from knowledge.vector_store import similarity_search
 def answer_question_with_rag(user_query: str):
     # Retrieve chunks
     context_chunks = similarity_search(user_query, n_results=3)
-    if context_chunks:
-        print("retrieve chunks")
-    if not context_chunks:
-        print("couldn't retrieve chunks")
-
     print(f"Chunk count: {len(context_chunks)}")
 
-    
     # Combine chunk contents
     context_text = "\n\n---\n\n".join([content["content"][0] for content in context_chunks])
-
-    print(context_text)
-    
+   
     # Construct prompt
     prompt = f"""Use the following context to answer the user's question.
     

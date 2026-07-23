@@ -2,7 +2,7 @@ from llm.llm_client import local_llm
 from agents.tools import tools
 from agents.chat_agent import AgentManager
 from knowledge.document_loader import load_and_process_pdf
-from knowledge.retriver import answer_question_with_rag
+from knowledge.retriever import answer_question_with_rag
 
 chat_agent = AgentManager(model=local_llm, tools=tools)
 
