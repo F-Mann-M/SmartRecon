@@ -46,7 +46,7 @@ class AgentManager():
             response = self.agent.invoke(
                 {"messages": [{"role": "user", "content": user_input}]},
                 config=self.config,
-                version="v3",
+                version="v2",
             )
 
             # get last message from the response
