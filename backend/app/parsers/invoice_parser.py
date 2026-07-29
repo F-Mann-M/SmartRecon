@@ -1,6 +1,8 @@
+# Parses invoices PDF and images
+
 from langchain_community.document_loaders import PyPDFLoader, WebBaseLoader, PyPDFDirectoryLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from knowledge.vector_store import add_chunks_to_collection
+from db.vector_store import add_chunks_to_collection
 import logging
 
 
@@ -21,7 +23,7 @@ def load_web(url):
     return documents
 
 
-def load_from_directory(dir_path: str = "data/raw"):
+def load_from_directory(dir_path: str = "../data/raw"):
     """loads PDF form data/raw and converts them to LangChain Documents"""
 
     try:

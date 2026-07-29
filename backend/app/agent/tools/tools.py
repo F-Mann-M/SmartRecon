@@ -1,8 +1,6 @@
 
 from langchain_core.tools import tool
-import sys
-import os
-from knowledge.vector_store import similarity_search
+from db.vector_store import similarity_search
 
 
 @tool
@@ -32,4 +30,4 @@ def search_knowledge_base(query: str) -> str:
     return results
     
 # Tool List
-tools = [calculator, search_knowledge_base]
+agent_tools = [calculator, search_knowledge_base]

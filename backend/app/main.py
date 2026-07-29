@@ -1,9 +1,9 @@
-from llm.llm_client import local_llm
-from agents.tools import tools
-from agents.chat_agent import AgentManager
-from knowledge.document_loader import load_and_process_pdf
+from core.llm.llm_client import local_llm
+from agent.tools.tools import agent_tools
+from agent.chat_agent import AgentManager
+from parsers.invoice_parser import load_and_process_pdf
 
-chat_agent = AgentManager(model=local_llm, tools=tools)
+chat_agent = AgentManager(model=local_llm, tools=agent_tools)
 
 # create ChromaDB
 load_and_process_pdf()
@@ -11,9 +11,10 @@ load_and_process_pdf()
 # check llm connection
 print("check llm connection...")
 response = local_llm.invoke("test")
-if response or response["content"]:
+if response or response.content:
     print(type(response))
-    print(response["content"])
+    print(response.content)
+    
 
 
 def cli_chat_():
