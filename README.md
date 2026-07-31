@@ -1,6 +1,6 @@
 # SmartRecon
 
-# Next-Gen RAG & Agentic AI Knowledge System
+# RAG & Agentic AI Bank Account Manager
 
 This repository is an active, hands-on development project that I am building alongside my participation in the [IBM RAG and Agentic AI Professional Certificate on Coursera](https://www.coursera.org/professional-certificates/ibm-rag-and-agentic-ai).
 
@@ -11,20 +11,21 @@ The goal of this project is to directly apply, test, and deepen the advanced con
 Currently this project is using a local model via OLLama. https://docs.langchain.com/oss/python/integrations/chat/ollama
 
 
-# When starting locally
-run colima or DockerDesktop if you prefer
+# Start Postgres locally
+run colima 
 
 ```bash
 start colima
 ```
 
-start database from smartrecon/infra
+start database from smartrecon/infra to run the docker-compose.yml
+it builds an image and runs the container
 
 ```bash
 docker-compose up -d
 ```
 
-check it the postgres server in the container is running:
+check if pg server is running:
 
 ```bash
 docker exec -it smartrecon_db psql -U postgres -d smartrecon -c "\dx"
