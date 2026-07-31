@@ -11,3 +11,21 @@ The goal of this project is to directly apply, test, and deepen the advanced con
 Currently this project is using a local model via OLLama. https://docs.langchain.com/oss/python/integrations/chat/ollama
 
 
+# When starting locally
+run colima or DockerDesktop if you prefer
+
+```bash
+start colima
+```
+
+start database from smartrecon/infra
+
+```bash
+docker-compose up -d
+```
+
+check it the postgres server in the container is running:
+
+```bash
+docker exec -it smartrecon_db psql -U postgres -d smartrecon -c "\dx"
+```
