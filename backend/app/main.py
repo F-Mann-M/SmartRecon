@@ -11,8 +11,8 @@ chat_agent = AgentManager(model=local_llm, tools=agent_tools)
 # create Tables
 Base.metadata.create_all(engine)
 
-# # create ChromaDB
-# load_and_process_pdf()
+# loads pdf and stores in PGVector store
+load_and_process_pdf()
 
 # # check llm connection
 # print("check llm connection...")
