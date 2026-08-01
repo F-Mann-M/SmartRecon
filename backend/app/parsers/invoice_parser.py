@@ -6,8 +6,7 @@ from db.vector_store import add_chunks_to_collection
 import logging
 
 
-logger = logging.basicConfig()
-
+# logger = logging.basicConfig()
 
 def load_pdf(file_path):
     """Load a PDF file and return its content as a list of documents."""
