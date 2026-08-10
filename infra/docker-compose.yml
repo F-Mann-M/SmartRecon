@@ -1,6 +1,6 @@
 # Setup an Postquest server locally in an Docker Container
 
-version: '3.8'
+# version: '3.8'
 
 services:
   postgres:

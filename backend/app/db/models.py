@@ -1,12 +1,28 @@
 import uuid
 from datetime import date, datetime
 from typing import Optional
-from sqlalchemy import String, Numeric, Text, Date, DateTime, ForeignKey, Float
+from sqlalchemy import String, Numeric, Text, Date, DateTime, ForeignKey, Float, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from pgvector.sqlalchemy import Vector
 from backend.app.db.session import Base
 
+timezone = datetime.now().astimezone().tzinfo  # Get the local timezone
 
+
+# BankAccount model for storing bank account data
+class BankAccountModel(Base):
+    __tablename__ = "bank_accounts"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    account_number: Mapped[str] = mapped_column(String(20), nullable=False, unique=True)
+    bank_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    account_holder: Mapped[str] = mapped_column(String(100), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(datetime.timezone.utc))
+
+    transactions: Mapped[list["TransactionModel"]] = relationship(back_populates="bank_account")
+
+
+# Invoice model for storing invoice data and embeddings
 class TransactionModel(Base): 
     __tablename__ = "transactions"
 
@@ -20,8 +36,10 @@ class TransactionModel(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     reconciliation: Mapped[Optional["ReconciliationModel"]] = relationship(back_populates="transaction")
+    bank_account: Mapped["BankAccountModel"] = relationship(back_populates="transactions")
+    
 
-
+# Invoice model for storing invoice data and embeddings
 class InvoiceModel(Base):
     __tablename__ = "invoices"
 
@@ -38,6 +56,7 @@ class InvoiceModel(Base):
     reconciliation: Mapped[Optional["ReconciliationModel"]] = relationship(back_populates="invoice")
 
 
+# Reconciliation model for linking transactions and invoices
 class ReconciliationModel(Base):
     __tablename__ = "reconciliations"
 
