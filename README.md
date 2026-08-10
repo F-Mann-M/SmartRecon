@@ -30,3 +30,14 @@ check if pg server is running:
 ```bash
 docker exec -it smartrecon_db psql -U postgres -d smartrecon -c "\dx"
 ```
+
+To stop the container run
+
+```bash
+docker stop smartrecon_db
+```
+
+Reset Database:
+```bash
+docker exec -it smartrecon_db psql -U postgres -c "DROP DATABASE smartrecon;" -c "CREATE DATABASE smartrecon;"
+```

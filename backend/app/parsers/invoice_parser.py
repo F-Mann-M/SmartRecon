@@ -2,19 +2,20 @@
 
 from langchain_community.document_loaders import PyPDFLoader, PyPDFDirectoryLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from db.vector_store import add_chunks_to_collection
+from db.vector_store import add_chunks_to_collection, compute_file_hash
+from core.config import settings
 import logging
 
 
 # logger = logging.basicConfig()
 
-def load_pdf(file_path):
-    """Load a PDF file and return its content as a list of documents."""
-    loader = PyPDFLoader(file_path)
-    documents = loader.load()
-    return documents
+# def load_pdf(file_path):
+#     """Load a PDF file and return its content as a list of documents."""
+#     loader = PyPDFLoader(file_path)
+#     documents = loader.load()
+#     return documents
 
-def load_from_directory(dir_path: str = "../data/raw/invoices"):
+def load_from_directory(dir_path: str = settings.RAW_INVOICE_DIR):
     """loads PDF form data/raw and converts them to LangChain Documents"""
 
     try:
@@ -49,9 +50,25 @@ def split_document(documents, chunk_size=1000, chunk_overlap=200):
 
 
 def load_and_process_pdf():
-    """loads pdf form directory splits and stores it into chromaDB"""
-    documents = load_from_directory()
-    chunks = split_document(documents)
-    add_chunks_to_collection(chunks)
+    """Loads PDFs from directory, processes each file individually, and avoids re-embedding existing files."""
+    pages = load_from_directory()
+    if not pages:
+        return
 
-    print("PDF successfully embedded")
+    # Group pages by their file path (PyPDFDirectoryLoader sets doc.metadata["source"])
+    files_to_docs = {}
+    for doc in pages:
+        source_path = doc.metadata.get("source")
+        if source_path:
+            files_to_docs.setdefault(source_path, []).append(doc)
+
+    # Process each file individually with its own hash
+    for file_path, docs in files_to_docs.items():
+        try:
+            file_hash = compute_file_hash(file_path)
+            chunks = split_document(docs)
+            add_chunks_to_collection(documents=chunks, file_path=file_path, file_hash=file_hash)
+        except Exception as e:
+            print(f"Failed to process {file_path}: {e}")
+
+    print("Directory processing completed.")
