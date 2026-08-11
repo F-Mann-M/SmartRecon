@@ -4,6 +4,7 @@ from agent.tools.tools import agent_tools
 from agent.chat_agent import AgentManager
 from parsers.invoice_parser import load_and_process_pdf
 from db.session import Base, engine
+from parsers.bank_parser import process_statement_folder
 
 chat_agent = AgentManager(model=local_llm, tools=agent_tools)
 
@@ -13,6 +14,9 @@ Base.metadata.create_all(engine)
 
 # loads pdf and stores in PGVector store
 load_and_process_pdf()
+
+# loads bank statements from a directory, parses them, and stores in PostgreSQL
+process_statement_folder()
 
 # # check llm connection
 # print("check llm connection...")
