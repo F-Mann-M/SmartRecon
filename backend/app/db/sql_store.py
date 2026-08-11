@@ -26,15 +26,15 @@ def save_to_postgres(statement_data: StatementSchema, file_name: str, file_hash:
     """
     Save the structured statement data to PostgreSQL using SQLAlchemy or psycopg2.
     """
-    # BankAccountModel
+    # Check if the bank account already exists in the database
     bank_account = session.query(BankAccountModel).filter_by(
         account_number_suffix=statement_data.account_number_suffix,
         bank_name=statement_data.bank_name
     ).first()
     if bank_account:
         print(f"Bank account {statement_data.bank_name} with suffix {statement_data.account_number_suffix} already exists in the database.")
-
-    if not bank_account:
+    # If the bank account does not exist, create a new one
+    else:
         # Create new bank account
         print(f"Creating new bank account for {statement_data.bank_name} with suffix {statement_data.account_number_suffix}.")
         bank_account = BankAccountModel(
@@ -45,7 +45,7 @@ def save_to_postgres(statement_data: StatementSchema, file_name: str, file_hash:
         session.add(bank_account)
         session.flush()  # Flush to get the bank_account.id
 
-    # StatementFileModel
+    # Add statement file entry to the database
     statement_file = StatementFileModel(
         bank_account_id=bank_account.id,
         file_name=file_name,
@@ -55,14 +55,26 @@ def save_to_postgres(statement_data: StatementSchema, file_name: str, file_hash:
     session.add(statement_file)
 
 
-    # TransactionModel
-    #  Add each transaction with transaction_date, amount, currency, description, category, status, balance, and bank_account_id and statement_file_id
+    # add transactions to the database
+    for transaction in statement_data.transactions:
+        transaction_model = TransactionModel(
+            bank_account_id=bank_account.id,
+            statement_file_id=statement_file.id,
+            transaction_date=transaction.transaction_date,
+            amount=transaction.amount,
+            currency="EUR",  # Assuming EUR for now; adjust as needed
+            description=transaction.description,
+            category=None,  # Placeholder; implement category extraction if needed
+            status="PENDING",  # Default status; adjust as needed
+            balance=transaction.balance
+        )
+        session.add(transaction_model)
+
 
     # Placeholder print statement for demonstration purposes
     print(f"Saving {file_name} with hash {file_hash} to PostgreSQL...")  # Replace with actual save logic
 
 
-# TODO: Implement the actual database insertion logic in the save_to_postgres function using SQLAlchemy or psycopg2, ensuring that all necessary relationships and constraints are respected.
 # TODO: Consider adding error handling and logging for database operations to ensure robustness and traceability.
 # TODO: Add InvoiceModel and ReconciliationModel saving logic
 # TODO: Add process for handling transactions and linking them to invoices with confidence scores in the ReconciliationModel.
