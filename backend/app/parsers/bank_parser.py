@@ -28,7 +28,11 @@ class StatementSchema(BaseModel):
 def process_statement_folder(folder_path: str = settings.RAW_STATEMENT_DIR):
     """Processes all bank statement PDFs in the specified folder, extracting structured data and saving it to PostgreSQL."""
     directory = Path(folder_path) # get the directory path as a Path object
-    pdf_files = list(directory.glob("*.pdf"))
+    pdf_files = list(directory.glob("*.pdf", case_sensitive=False))
+    
+    print(f"Debug: Looking for PDF files in {directory.resolve()}")
+    for pdf_file in pdf_files:
+        print(f"Debug: Found PDF file: {pdf_file.name}")
 
     if not pdf_files:
         print(f"No PDF files found in {directory.resolve()}")
@@ -44,7 +48,7 @@ def process_statement_folder(folder_path: str = settings.RAW_STATEMENT_DIR):
         print(f"--- Processing: {file_path.name} ---")
 
         try:
-            # Compute hash for dedup check
+            # Compute hash
             file_hash = compute_file_hash(file_path)
 
             # check if file is already in database
@@ -53,12 +57,13 @@ def process_statement_folder(folder_path: str = settings.RAW_STATEMENT_DIR):
                 continue
 
             # Parse statement to structured Pydantic object
-            statement_data: StatementSchema = parse_statement_to_sql_payload(file_path, llm)
+            statement_data: StatementSchema = parse_statement_to_sql_payload(file_path)
 
+            print(f"\n\nSuccessfully parsed {file_path.name} to structured data.")
             print(f"Bank: {statement_data.bank_name}")
             print(f"Account Suffix: {statement_data.account_number_suffix}")
             print(f"Period: {statement_data.statement_period}")
-            print(f"Extracted {len(statement_data.transactions)} transaction(s).")
+            #print(f"Extracted {len(statement_data.transactions)} transaction(s).")
 
             # Save statement_data to PostgreSQL (SQLAlchemy / psycopg)
             save_to_postgres(statement_data, file_name=file_path.name, file_hash=file_hash)
@@ -77,7 +82,8 @@ def parse_statement_to_sql_payload(pdf_path: str) -> StatementSchema:
     # Combine page contents
     raw_text = "\n".join([doc.page_content for doc in docs])
 
-    llm = ChatOllama(model="gemma4", temperature=0)
+    # TODO: Consider moving the LLM initialization to a separate module (like llm_client.py) for consistency and easier testing.
+    llm = ChatOllama(model="gemma2:9b", temperature=0)
     structured_llm = llm.with_structured_output(StatementSchema)
 
     prompt = f"""
@@ -86,6 +92,7 @@ def parse_statement_to_sql_payload(pdf_path: str) -> StatementSchema:
     - All dates are in standard YYYY-MM-DD format.
     - Debit/expenses are strictly NEGATIVE numbers.
     - Credit/deposits are strictly POSITIVE numbers.
+    - If no transactions are found, set 'transactions': [].
 
     Statement Content:
     {raw_text}

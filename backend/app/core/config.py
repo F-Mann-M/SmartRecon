@@ -10,7 +10,7 @@ class Settings(BaseSettings): # load all key=value pairs from .env
 
     """Load RAW PDF"""
     RAW_INVOICE_DIR: str = f"{BASE_DIR}/data/raw/invoices"
-    RAW_STATEMENTS_DIR: str = f"{BASE_DIR}/data/raw/statements"  
+    RAW_STATEMENT_DIR: str = f"{BASE_DIR}/data/raw/bank_statements"  
 
     model_config = SettingsConfigDict(
         env_file = BASE_DIR/".env",

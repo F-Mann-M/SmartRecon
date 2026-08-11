@@ -4,7 +4,7 @@ from typing import Optional
 from sqlalchemy import String, Numeric, Text, Date, DateTime, ForeignKey, Float
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from pgvector.sqlalchemy import Vector
-from backend.app.db.session import Base
+from db.session import Base
 
 
 # BankAccount model for storing bank account data
