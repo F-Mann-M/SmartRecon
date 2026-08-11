@@ -4,7 +4,7 @@ from langchain_postgres import PGVector
 from typing import List, Optional
 from langchain_core.documents import Document
 import os
-import hashlib
+import hashlib # for computing file hashes
 
 vector_store = PGVector(
     embeddings=local_embeddings,
@@ -12,8 +12,6 @@ vector_store = PGVector(
     connection=settings.DATABASE_URL,
     use_jsonb=True,
 )
-
-retriever = vector_store.as_retriever(search_kwargs={"k": 3})
 
 
 def compute_file_hash(file_path: str) -> str:
