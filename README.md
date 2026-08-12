@@ -1,38 +1,47 @@
 # SmartRecon
 
 # RAG & Agentic AI Bank Account Manager
-
 This repository is an active, hands-on development project that I am building alongside my participation in the [IBM RAG and Agentic AI Professional Certificate on Coursera](https://www.coursera.org/professional-certificates/ibm-rag-and-agentic-ai).
 
-## Project Purpose
-The goal of this project is to directly apply, test, and deepen the advanced conceptual knowledge and practical frameworks acquired throughout the 10-module IBM curriculum. By moving directly from theoretical modules to live code, this system serves as a production-oriented implementation of modern generative AI architectures.
+## Project Goal:
+SmartRecon — Intelligent Financial Matching & Analytics Agent
+SmartRecon is an automated financial reconciliation and analytics system currently in development, built on a hybrid RAG (Retrieval-Augmented Generation) and multi-tool agent architecture.
+
+The core goal of the project is to bridge unstructured document processing (invoices) with structured relational bank data (bank statements) to streamline end-to-end accounting workflows:
+
+### Automated Reconciliation & Matching: 
+Designed to leverage PGVector similarity search alongside relational SQL logic to automatically match incoming invoice documents with bank transactions based on vendor details, line items, amounts, and payment dates.
+
+### Autonomous Financial Multi-Tool Agent: 
+Aiming to integrate a LangGraph orchestration layer that enables an AI agent to execute database queries, analyze spending trends, highlight cost anomalies, and handle manual transaction overrides through natural language commands.
+
+### Hybrid Data Infrastructure: 
+Combining traditional PostgreSQL tables for precise relational record-keeping with vector embeddings to enable semantic search across unstructured invoices, suppliers, and bank transaction metadata.
+
 
 ## Models
 Currently this project is using a local model via OLLama. https://docs.langchain.com/oss/python/integrations/chat/ollama
 
 
+
 # Start Postgres locally
 run colima 
-
 ```bash
 start colima
 ```
 
 start database from smartrecon/infra to run the docker-compose.yml
 it builds an image and runs the container
-
 ```bash
 docker-compose up -d
 ```
 
-check if pg server is running:
-
+check if pg server is running
 ```bash
 docker exec -it smartrecon_db psql -U postgres -d smartrecon -c "\dx"
 ```
 
 To stop the container run
-
 ```bash
 docker stop smartrecon_db
 ```
