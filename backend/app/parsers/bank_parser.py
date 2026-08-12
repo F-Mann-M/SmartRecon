@@ -6,6 +6,7 @@ from langchain_ollama import ChatOllama
 from core.config import settings
 from db.sql_store import is_file_already_in_db, save_to_postgres
 from db.vector_store import compute_file_hash
+from db.session import get_db
 
 from pathlib import Path
 from datetime import date
@@ -52,10 +53,11 @@ def process_statement_folder(folder_path: str = settings.RAW_STATEMENT_DIR):
             file_hash = compute_file_hash(file_path)
 
             # check if file is already in database
-            if is_file_already_in_db(file_hash):
-                print(f"Skipping {file_path.name} — already present in database.\n")
-                continue
-
+            with get_db() as db:
+                if is_file_already_in_db(db, file_hash):
+                    print(f"Skipping {file_path.name} — already present in database.\n")
+                    continue
+           
             # Parse statement to structured Pydantic object
             statement_data: StatementSchema = parse_statement_to_sql_payload(file_path)
 
@@ -66,7 +68,8 @@ def process_statement_folder(folder_path: str = settings.RAW_STATEMENT_DIR):
             #print(f"Extracted {len(statement_data.transactions)} transaction(s).")
 
             # Save statement_data to PostgreSQL (SQLAlchemy / psycopg)
-            save_to_postgres(statement_data, file_name=file_path.name, file_hash=file_hash)
+            with get_db() as db:
+                save_to_postgres(db, statement_data, file_name=file_path.name, file_hash=file_hash)
 
             print(f"Successfully processed and stored {file_path.name}\n")
 

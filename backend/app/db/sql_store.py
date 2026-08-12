@@ -1,40 +1,27 @@
 from db.models import StatementFileModel, TransactionModel, InvoiceModel, ReconciliationModel, BankAccountModel
 from sqlalchemy.orm import Session
-from db.session import get_db_session
 
 
-def is_file_already_in_db(file_hash: str) -> bool:
-    """
-    Check if a file with the given hash already exists in the database.
-    Returns True if it exists, False otherwise.
-    """
-    session: Session = get_db_session()
-    try:
-        result = session.query(StatementFileModel).filter_by(file_hash=file_hash).first()
-        if result:
-            print(f"File with hash {file_hash} already exists in the database.")
-            return True
-        else:
-            print(f"File with hash {file_hash} does not exist in the database.")
-            return False
-    finally:
-        session.close()
+def is_file_already_in_db(db: Session, file_hash: str) -> bool:
+    return db.query(StatementFileModel).filter_by(file_hash=file_hash).first() is not None
 
 
-def save_to_postgres(statement_data, file_name: str, file_hash: str):
+def save_to_postgres(session: Session, statement_data, file_name: str, file_hash: str) -> StatementFileModel:
     """
     Save the structured statement data to PostgreSQL using SQLAlchemy.
     """
-    session: Session = get_db_session()
+
     try:
         # Check if the bank account already exists in the database
         bank_account = session.query(BankAccountModel).filter_by(
             account_number_suffix=statement_data.account_number_suffix,
             bank_name=statement_data.bank_name
         ).first()
+
         if bank_account:
             print(f"Bank account {statement_data.bank_name} with suffix {statement_data.account_number_suffix} already exists in the database.")
-        else:
+
+        if not bank_account:
             print(f"Creating new bank account for {statement_data.bank_name} with suffix {statement_data.account_number_suffix}.")
             bank_account = BankAccountModel(
                 account_number_suffix=statement_data.account_number_suffix,
@@ -68,11 +55,12 @@ def save_to_postgres(statement_data, file_name: str, file_hash: str):
 
         session.commit()
         print(f"Saving {file_name} with hash {file_hash} to PostgreSQL...")
+        return statement_file
     except Exception:
         session.rollback()
+        print(f"Database error while saving {file_name}: {e}")
         raise
-    finally:
-        session.close()
+   
 
 # TODO: Consider adding error handling and logging for database operations to ensure robustness and traceability.
 # TODO: Add InvoiceModel and ReconciliationModel saving logic
