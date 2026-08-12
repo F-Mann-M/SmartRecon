@@ -14,6 +14,16 @@ from api.v1.router import router as api_v1_router
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
+# create Tables
+Base.metadata.create_all(engine)
+
+# loads pdf and stores in PGVector store
+load_and_process_pdf()
+
+# loads bank statements from a directory, parses them, and stores in PostgreSQL
+process_statement_folder()
+
 def create_app() -> FastAPI:
     app = FastAPI(
         title="smartRecon API",
@@ -22,14 +32,7 @@ def create_app() -> FastAPI:
         docs_url="/docs",
         redoc_url="/redoc",
     )
-    # create Tables
-    Base.metadata.create_all(engine)
-
-    # loads pdf and stores in PGVector store
-    load_and_process_pdf()
-
-    # loads bank statements from a directory, parses them, and stores in PostgreSQL
-    process_statement_folder()
+   
 
     # Register API Routers
     app.include_router(api_v1_router, prefix="/api/router", tags=["API"])
