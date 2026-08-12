@@ -4,12 +4,14 @@ from typing import List, Optional
 from datetime import date
 from langchain_ollama import ChatOllama
 from core.config import settings
-from db.sql_store import is_file_already_in_db, save_to_postgres
-from db.vector_store import compute_file_hash
+from db.repositories.bank_repository import BankRepository
+from db.repositories.invoice_repository import compute_file_hash
 from db.session import get_db
 
 from pathlib import Path
 from datetime import date
+
+bank_repo = BankRepository(db_session=get_db())  # Initialize the repository with a database session
 
 
 class TransactionSchema(BaseModel):
@@ -31,7 +33,7 @@ def process_statement_folder(folder_path: str = settings.RAW_STATEMENT_DIR):
     directory = Path(folder_path) # get the directory path as a Path object
     pdf_files = list(directory.glob("*.pdf", case_sensitive=False))
     
-    print(f"Debug: Looking for PDF files in {directory.resolve()}")
+    print(f"\nDebug: Looking for PDF files in {directory.resolve()}")
     for pdf_file in pdf_files:
         print(f"Debug: Found PDF file: {pdf_file.name}")
 
@@ -54,7 +56,8 @@ def process_statement_folder(folder_path: str = settings.RAW_STATEMENT_DIR):
 
             # check if file is already in database
             with get_db() as db:
-                if is_file_already_in_db(db, file_hash):
+                bank_repo = BankRepository(db_session=db)
+                if bank_repo.is_file_already_in_db(file_hash):
                     print(f"Skipping {file_path.name} — already present in database.\n")
                     continue
            
@@ -69,7 +72,8 @@ def process_statement_folder(folder_path: str = settings.RAW_STATEMENT_DIR):
 
             # Save statement_data to PostgreSQL (SQLAlchemy / psycopg)
             with get_db() as db:
-                save_to_postgres(db, statement_data, file_name=file_path.name, file_hash=file_hash)
+                bank_repo = BankRepository(db_session=db)
+                bank_repo.save_to_postgres(statement_data, file_name=file_path.name, file_hash=file_hash)
 
             print(f"Successfully processed and stored {file_path.name}\n")
 

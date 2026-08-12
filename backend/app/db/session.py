@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, DeclarativeBase
+from sqlalchemy.orm import sessionmaker, DeclarativeBase, Session
 from contextlib import contextmanager
 
 from core.config import settings
@@ -12,15 +12,25 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 class Base(DeclarativeBase):
     pass
 
-@contextmanager
-def get_db():
-    """Provides a transactional database session for FastAPI or scripts."""
+def get_db_fastapi():
+    """Generator for FastAPI routes. Managed automatically by Depends()."""
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
 
-# def get_db_session():
-#     """Return a normal SQLAlchemy Session for non-dependency-injection use cases."""
-#     return SessionLocal()
+
+# 2. For Standalone Scripts / Background Tasks (Context Manager)
+@contextmanager
+def get_db():
+    """Context manager for scripts, CLI commands, and worker jobs."""
+    db = SessionLocal()
+    try:
+        yield db
+        db.commit()  # Auto-commit on clean exit
+    except Exception:
+        db.rollback()  # Auto-rollback on error
+        raise
+    finally:
+        db.close()
