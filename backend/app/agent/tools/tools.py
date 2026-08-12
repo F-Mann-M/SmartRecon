@@ -1,6 +1,6 @@
 
 from langchain_core.tools import tool
-from db.vector_store import similarity_search
+from db.repositories.invoice_repository import similarity_search
 
 
 @tool

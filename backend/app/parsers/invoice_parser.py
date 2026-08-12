@@ -2,18 +2,10 @@
 
 from langchain_community.document_loaders import PyPDFLoader, PyPDFDirectoryLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from db.vector_store import add_chunks_to_collection, compute_file_hash
+from db.repositories.invoice_repository import add_chunks_to_collection, compute_file_hash
 from core.config import settings
 import logging
 
-
-# logger = logging.basicConfig()
-
-# def load_pdf(file_path):
-#     """Load a PDF file and return its content as a list of documents."""
-#     loader = PyPDFLoader(file_path)
-#     documents = loader.load()
-#     return documents
 
 def load_from_directory(dir_path: str = settings.RAW_INVOICE_DIR):
     """loads PDF form data/raw and converts them to LangChain Documents"""
