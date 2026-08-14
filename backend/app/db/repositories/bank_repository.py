@@ -10,6 +10,7 @@ class BankRepository:
     def is_file_already_in_db(self, file_hash: str) -> bool:
         return self.db_session.query(StatementFileModel).filter_by(file_hash=file_hash).first() is not None
 
+
     def save_to_postgres(self, statement_data, file_name: str, file_hash: str) -> StatementFileModel:
         """
         Save the structured statement data to PostgreSQL using SQLAlchemy.
