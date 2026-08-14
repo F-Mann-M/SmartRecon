@@ -69,8 +69,9 @@ class InvoiceModel(Base):
     invoice_date: Mapped[Optional[date]] = mapped_column(Date)
     total_amount: Mapped[Optional[float]] = mapped_column(Numeric(12, 2))
     tax_amount: Mapped[Optional[float]] = mapped_column(Numeric(12, 2))
+    currency: Mapped[Optional[str]] = mapped_column(String(3), default="EUR")
+    description: Mapped[Optional[str]] = mapped_column(Text, default=None)
     raw_text: Mapped[Optional[str]] = mapped_column(Text)
-    embedding: Mapped[Optional[list[float]]] = mapped_column(Vector(768))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     reconciliation: Mapped[Optional["ReconciliationModel"]] = relationship(back_populates="invoice")

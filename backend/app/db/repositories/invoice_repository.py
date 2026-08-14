@@ -1,10 +1,17 @@
-from core.llm.llm_client import local_embeddings
-from core.config import settings
 from langchain_postgres import PGVector
 from typing import List, Optional
 from langchain_core.documents import Document
+from sqlalchemy.orm import Session
 import os
-import hashlib # for computing file hashes
+from langchain_ollama import ChatOllama
+
+from core.llm.llm_client import local_embeddings
+from core.config import settings
+from db.models import InvoiceModel
+from schemas.invoice import InvoiceSchema
+
+
+# TODO: Consider moving vector_store initialization to a separate module or configuration file for better maintainability and testability.
 
 vector_store = PGVector(
     embeddings=local_embeddings,
@@ -12,20 +19,6 @@ vector_store = PGVector(
     connection=settings.DATABASE_URL,
     use_jsonb=True,
 )
-
-
-def compute_file_hash(file_path: str) -> str:
-    """Compute SHA-256 hash for a file at file_path. Returns hex digest."""
-    print(f"Computing hash for file: {file_path}")
-    h = hashlib.sha256()
-    try:
-        with open(file_path, "rb") as f:
-            for chunk in iter(lambda: f.read(8192), b""):
-                h.update(chunk)
-    except Exception as e:
-        # Re-raise to let callers decide; callers may choose to handle remote files differently
-        raise
-    return h.hexdigest()
 
 
 def file_already_embedded(file_path: Optional[str] = None, file_hash: Optional[str] = None) -> bool:
@@ -36,7 +29,7 @@ def file_already_embedded(file_path: Optional[str] = None, file_hash: Optional[s
     Falls back to a filename-based check if file_hash checks fail (best-effort).
     """
 
-    print("Checking if file is already embedded...")
+    print("\nChecking if file is already embedded...")
     print(f"file_path: {file_path}, file_hash: {file_hash}")
 
     if not file_hash:
@@ -82,7 +75,7 @@ def add_chunks_to_collection(documents: List[Document], file_path: Optional[str]
         print("No documents provided")
         return
 
-    # If we received file metadata, check for duplicates before embedding
+    # check for duplicates before embedding
     try:
         already = False
         if file_hash or file_path:
@@ -145,3 +138,54 @@ def similarity_search(query: str, n_results: int = 3, where_filter: dict = None)
 
     return "\n\n".join(context_blocks)
 
+
+def parse_and_store_invoice_sql(db: Session, raw_text: str, file_hash: str, file_path: str) -> InvoiceModel:
+    """
+    Parses the raw text of an invoice, structures data by using a LLM and store structured data in the database.
+    Returns the created InvoiceModel instance.
+    """
+    llm = ChatOllama(model="llama3.1:8b", temperature=0)
+    structured_llm = llm.with_structured_output(InvoiceSchema)
+
+    prompt = f"""
+You are an AI assistant that extracts structured data from invoice text: \n{raw_text}\n
+Please extract the following fields:
+- vendor_name: Name of the vendor/supplier
+- invoice_date: Invoice date in YYYY-MM-DD format
+- total_amount: Total invoice amount
+- tax_amount: Tax or VAT amount
+- currency: Currency of the invoice amount, e.g., USD, EUR
+- description: Optional description or notes about the invoice
+Return the extracted data in JSON format adhering to the InvoiceSchema.
+    """
+    print(f"\nParsing invoice data for file {file_path} with hash {file_hash}...")
+    data: InvoiceSchema = structured_llm.invoke(prompt)
+
+    # Create and store the InvoiceModel instance in the database
+    invoice = InvoiceModel(
+        vendor_name=data.vendor_name,
+        invoice_date=data.invoice_date,
+        total_amount=data.total_amount,
+        tax_amount=data.tax_amount,
+        currency=data.currency,
+        description=data.description,
+        file_hash=file_hash,
+        file_path=file_path,
+        raw_text=raw_text
+    )
+    print(f"\nStoring invoice data in PostgreSQL for file {file_path} with hash {file_hash}...")
+    for field, value in data.dict().items():
+        print(f"{field}: {value}")
+
+    db.add(invoice)
+    db.commit()
+    db.refresh(invoice)
+    return invoice
+
+def get_invoice_by_hash(db: Session, file_hash: str) -> Optional[InvoiceModel]:
+    """Retrieve an invoice from the database by its file hash."""
+    return db.query(InvoiceModel).filter_by(file_hash=file_hash).first()
+
+
+def get_all_invoices(db: Session) -> List[dict]:
+    return db.query(InvoiceModel).all()

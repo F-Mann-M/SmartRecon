@@ -1,17 +1,18 @@
 from langchain_community.document_loaders import PDFPlumberLoader
 import langchain
-from pydantic import BaseModel, Field
-from typing import List, Optional, Union
+from typing import Union
 from datetime import date
 from langchain_ollama import ChatOllama
+from pathlib import Path
+
 from core.config import settings
 from db.repositories.bank_repository import BankRepository
-from db.repositories.invoice_repository import compute_file_hash
+from db.repositories.utilities import compute_file_hash
 from db.session import get_db
-from schemas.bank_statement import StatementSchema, TransactionSchema
+from schemas.bank_statement import StatementSchema
 
-from pathlib import Path
-from datetime import date
+
+
 
 bank_repo = BankRepository(db_session=get_db())  # Initialize the repository with a database session
 langchain.debug = True  # Enable debug mode for LangChain to get detailed logs

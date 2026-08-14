@@ -1,10 +1,14 @@
 # Parses invoices PDF and images
 
-from langchain_community.document_loaders import PyPDFLoader, PyPDFDirectoryLoader
+from langchain_community.document_loaders import PyPDFDirectoryLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from db.repositories.invoice_repository import add_chunks_to_collection, compute_file_hash
+from pathlib import Path
+
+from db.repositories.invoice_repository import add_chunks_to_collection, parse_and_store_invoice_sql
+from db.repositories.utilities import compute_file_hash
 from core.config import settings
-import logging
+from db.models import InvoiceModel
+from db.session import get_db
 
 
 def load_from_directory(dir_path: str = settings.RAW_INVOICE_DIR):
@@ -54,13 +58,30 @@ def load_and_process_pdf():
         if source_path:
             files_to_docs.setdefault(source_path, []).append(doc)
 
-    # Process each file individually with its own hash
+    # Process each PDF file individually
     for file_path, docs in files_to_docs.items():
+        file_name = Path(file_path).name
+        print(f"--- Processing Invoice: {file_name} ---")
+
         try:
             file_hash = compute_file_hash(file_path)
+
+            #  Check and Save Relational Data in PostgreSQL
+            with get_db() as db:
+                existing_invoice = db.query(InvoiceModel).filter_by(file_hash=file_hash).first()
+                if not existing_invoice:
+                    # Combine all page contents into full raw text for context-complete LLM parsing
+                    full_raw_text = "\n\n".join([doc.page_content for doc in docs])
+                    parse_and_store_invoice_sql(db=db, raw_text=full_raw_text, file_path=file_path, file_hash=file_hash)
+                else:
+                    print(f"Invoice {file_name} already exists in relational database.")
+
+            # Chunk and Embed into PGVector Collection
             chunks = split_document(docs)
             add_chunks_to_collection(documents=chunks, file_path=file_path, file_hash=file_hash)
-        except Exception as e:
-            print(f"Failed to process {file_path}: {e}")
 
-    print("Directory processing completed.")
+        except Exception as e:
+            print(f"Failed to process invoice {file_name}: {e}")
+
+    print("\nDirectory processing completed successfully.")
+

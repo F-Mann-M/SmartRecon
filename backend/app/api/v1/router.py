@@ -4,6 +4,7 @@ from typing import List
 
 from db.session import get_db_fastapi
 from db.repositories.bank_repository import BankRepository
+from db.repositories.invoice_repository import get_all_invoices
 from schemas.transaction import DetailedTransactionSchema
 
 
@@ -30,3 +31,11 @@ def get_all_detailed_transactions(db: Session = Depends(get_db_fastapi)):
     detailed_transactions = repo.get_detailed_transactions()
     return detailed_transactions
 
+
+@router.get("/invoices")
+def get_invoices(db: Session = Depends(get_db_fastapi)):
+    """
+    Endpoint to retrieve all invoices from the database.
+    """
+    invoices = get_all_invoices(db=db)
+    return invoices

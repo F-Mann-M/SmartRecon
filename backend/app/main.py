@@ -56,13 +56,4 @@ if __name__ == "__main__":
 
     
 
-# def cli_chat_():
-#     chat_agent = AgentManager(model=local_llm, tools=agent_tools)
-#     while True:
-#         user_input = input("\nUser: ")
-#         if user_input.lower() in ["exit", "quit"]:
-#             print("Bye!")
-#             break
-#         response = chat_agent.run_agent_stream(user_input)
-
 
