@@ -33,6 +33,7 @@ class BankRepository:
             # Add transactions to the database
             for transaction in statement_data.transactions:
                 transaction_model = TransactionModel(
+                    vendor_name=transaction.vendor_name,
                     bank_account_id=bank_account.id,
                     statement_file_id=statement_file.id,
                     transaction_date=transaction.transaction_date,
@@ -94,6 +95,7 @@ class BankRepository:
             self.db_session.query(
                 TransactionModel.id,
                 TransactionModel.transaction_date,
+                TransactionModel.vendor_name,
                 TransactionModel.amount,
                 TransactionModel.currency,
                 TransactionModel.description,
@@ -118,7 +120,7 @@ class BankRepository:
         # Convert SQLAlchemy Row objects to dicts for Pydantic parsing
         return [row._asdict() for row in results]
  
-
+# TODO: Avoid duplicates. currently there a duplicates in database!!! 
 # TODO: Consider adding error handling and logging for database operations to ensure robustness and traceability.
 # TODO: Add InvoiceModel and ReconciliationModel saving logic
 # TODO: Add process for handling transactions and linking them to invoices with confidence scores in the ReconciliationModel.

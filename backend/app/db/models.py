@@ -43,7 +43,7 @@ class TransactionModel(Base):
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     bank_account_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("bank_accounts.id"), nullable=False)
     statement_file_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("statement_files.id", ondelete="CASCADE"))
-    
+    vendor_name: Mapped[Optional[str]] = mapped_column(String(255))
     transaction_date: Mapped[date] = mapped_column(Date, nullable=False)
     amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
     currency: Mapped[str] = mapped_column(String(3), default="EUR")
