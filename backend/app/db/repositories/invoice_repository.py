@@ -155,7 +155,7 @@ Please extract the following fields:
 - total_amount: Total invoice amount
 - tax_amount: Tax or VAT amount
 - currency: Currency of the invoice amount, e.g., USD, EUR
-- description: Optional description or notes about the invoice
+- description: Description or notes about the invoice or any additional relevant information like invoice number
 Return the extracted data in JSON format adhering to the InvoiceSchema.
     """
     print(f"\nParsing invoice data for file {file_path} with hash {file_hash}...")
@@ -168,7 +168,7 @@ Return the extracted data in JSON format adhering to the InvoiceSchema.
         total_amount=data.total_amount,
         tax_amount=data.tax_amount,
         currency=data.currency,
-        description=data.description,
+        description=data.description, # TODO: Check why description is always None — might be an issue with LLM parsing or schema mapping
         file_hash=file_hash,
         file_path=file_path,
         raw_text=raw_text

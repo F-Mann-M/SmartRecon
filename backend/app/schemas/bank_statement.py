@@ -4,6 +4,7 @@ from datetime import date
 
 class TransactionSchema(BaseModel):
     transaction_date: date = Field(description="Transaction date in YYYY-MM-DD")
+    vendor_name: Optional[str] = Field(description="name of the vendor")
     description: str = Field(description="Cleaned payor/payee or transaction summary")
     amount: float = Field(description="Transaction amount (negative for debit, positive for credit)")
     balance: Optional[float] = Field(description="Running balance if present")
