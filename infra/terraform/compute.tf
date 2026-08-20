@@ -3,8 +3,8 @@
 
 resource "azurerm_public_ip" "vm_public_ip" {
   name                = "${var.prefix}-vm-pip-${var.environment}"
-  location            = var.location
-  resource_group_name = var.resource_group_name
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
   allocation_method   = "Static"
   sku                 = "Standard"
 
@@ -13,8 +13,8 @@ resource "azurerm_public_ip" "vm_public_ip" {
 
 resource "azurerm_network_interface" "nic" {
   name                = "${var.prefix}-vm-nic-${var.environment}"
-  location            = var.location
-  resource_group_name = var.resource_group_name
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
 
   ip_configuration {
     name                          = "internal"
@@ -28,8 +28,8 @@ resource "azurerm_network_interface" "nic" {
 
 resource "azurerm_linux_virtual_machine" "vm" {
   name                = "${var.prefix}-vm-${var.environment}"
-  resource_group_name = var.resource_group_name
-  location            = var.location
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
   size = "Standard_B2ats_v2" # or "Standard_B2pts_v2"
   admin_username      = "adminuser"
   network_interface_ids = [

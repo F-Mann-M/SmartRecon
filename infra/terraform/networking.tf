@@ -3,8 +3,8 @@
 resource "azurerm_virtual_network" "vnet" {
   name                = "smartrecon-vnet"
   address_space       = ["10.1.0.0/16"]
-  location            = var.location
-  resource_group_name = var.resource_group_name
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
 
   tags = {
     project = "SmartRecon"
@@ -14,14 +14,14 @@ resource "azurerm_virtual_network" "vnet" {
 # Subnets
 resource "azurerm_subnet" "snet_compute" {
   name                 = "snet-compute"
-  resource_group_name  = var.resource_group_name
+  resource_group_name  = azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.vnet.name
   address_prefixes     = ["10.1.1.0/24"]
 }
 
 resource "azurerm_subnet" "snet_postgres" {
   name                 = "snet-postgres"
-  resource_group_name  = var.resource_group_name
+  resource_group_name  = azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.vnet.name
   address_prefixes     = ["10.1.2.0/24"]
 
@@ -37,15 +37,15 @@ resource "azurerm_subnet" "snet_postgres" {
 
 resource "azurerm_subnet" "snet_endpoints" {
   name                 = "snet-endpoints"
-  resource_group_name  = var.resource_group_name
+  resource_group_name  = azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.vnet.name
   address_prefixes     = ["10.1.3.0/24"]
 }
 
 resource "azurerm_network_security_group" "nsg_compute" {
   name                = "smartrecon-nsg-compute"
-  location            = var.location
-  resource_group_name = var.resource_group_name
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
 
   security_rule {
     name                       = "Allow-SSH-From-MyIP"
@@ -80,8 +80,8 @@ resource "azurerm_network_security_group" "nsg_compute" {
 
 resource "azurerm_network_security_group" "nsg_postgres" {
   name                = "smartrecon-nsg-postgres"
-  location            = var.location
-  resource_group_name = var.resource_group_name
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
 
   security_rule {
     name                       = "Allow-Postgres-From-Compute"
