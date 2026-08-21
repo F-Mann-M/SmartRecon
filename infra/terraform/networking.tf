@@ -1,17 +1,17 @@
 # Terraform configuration for Azure networking resources
 
+# Virtual Network
 resource "azurerm_virtual_network" "vnet" {
   name                = "smartrecon-vnet"
   address_space       = ["10.1.0.0/16"]
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
 
-  tags = {
-    project = "SmartRecon"
-  }
+  tags = local.common_tags
 }
 
 # Subnets
+# Subnet where the app lives
 resource "azurerm_subnet" "snet_compute" {
   name                 = "snet-compute"
   resource_group_name  = azurerm_resource_group.rg.name
@@ -19,6 +19,7 @@ resource "azurerm_subnet" "snet_compute" {
   address_prefixes     = ["10.1.1.0/24"]
 }
 
+# Subnet where Private Endpoints for the database live
 resource "azurerm_subnet" "snet_postgres" {
   name                 = "snet-postgres"
   resource_group_name  = azurerm_resource_group.rg.name
@@ -35,6 +36,7 @@ resource "azurerm_subnet" "snet_postgres" {
   }
 }
 
+# Endpoints for Storage and Foundry
 resource "azurerm_subnet" "snet_endpoints" {
   name                 = "snet-endpoints"
   resource_group_name  = azurerm_resource_group.rg.name
@@ -42,6 +44,7 @@ resource "azurerm_subnet" "snet_endpoints" {
   address_prefixes     = ["10.1.3.0/24"]
 }
 
+# Network Security Groups
 resource "azurerm_network_security_group" "nsg_compute" {
   name                = "smartrecon-nsg-compute"
   location            = azurerm_resource_group.rg.location
@@ -73,9 +76,7 @@ resource "azurerm_network_security_group" "nsg_compute" {
     description                = "Allow internal VNet traffic"
   }
 
-  tags = {
-    project = "SmartRecon"
-  }
+  tags = local.common_tags
 }
 
 resource "azurerm_network_security_group" "nsg_postgres" {
@@ -109,9 +110,7 @@ resource "azurerm_network_security_group" "nsg_postgres" {
     description                = "Allow internal VNet traffic"
   }
 
-  tags = {
-    project = "SmartRecon"
-  }
+  tags = local.common_tags
 }
 
 resource "azurerm_network_security_group" "nsg_endpoints" {
@@ -132,9 +131,7 @@ resource "azurerm_network_security_group" "nsg_endpoints" {
     description                = "Allow internal VNet traffic"
   }
 
-  tags = {
-    project = "SmartRecon"
-  }
+  tags = local.common_tags
 }
 
 resource "azurerm_subnet_network_security_group_association" "compute_assoc" {
