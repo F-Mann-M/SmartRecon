@@ -1,10 +1,13 @@
 
+from db.models import TransactionModel
 from core.llm.llm_client import local_llm
 from agent.tools.tools import agent_tools
 from agent.chat_agent import AgentManager
 from parsers.invoice_parser import load_and_process_pdf
-from db.session import Base, engine
+from db.session import Base, engine, get_db
 from parsers.bank_parser import process_statement_folder
+from db.repositories.reconciliation_repository import find_best_invoice_match
+
 import logging
 from fastapi import FastAPI
 
@@ -23,6 +26,13 @@ load_and_process_pdf()
 
 # loads bank statements from a directory, parses them, and stores in PostgreSQL
 process_statement_folder()
+
+# reconciliation
+with get_db() as db:
+    print(f"\nGet all transactions...")
+    transaction = db.query(TransactionModel).all()
+    find_best_invoice_match(db=db, transactions=transaction)
+    
 
 def create_app() -> FastAPI:
     app = FastAPI(
@@ -55,5 +65,4 @@ if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
 
     
-
 

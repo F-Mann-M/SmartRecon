@@ -27,7 +27,12 @@ Currently this project is using a local model via OLLama. https://docs.langchain
 # Start Postgres locally
 run colima 
 ```bash
-start colima
+colima start
+```
+
+in case there is an issue with the current colima stop it and start again
+```bash
+colima stop --force
 ```
 
 start database from smartrecon/infra to run the docker-compose.yml

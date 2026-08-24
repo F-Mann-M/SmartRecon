@@ -39,3 +39,12 @@ def get_invoices(db: Session = Depends(get_db_fastapi)):
     """
     invoices = get_all_invoices(db=db)
     return invoices
+
+
+@router.get("/invoices")
+def get_invoices(db: Session = Depends(get_db_fastapi)):
+    """
+    Endpoint to retrieve all invoices from the database.
+    """
+    invoices = get_all_invoices(db=db)
+    return invoices

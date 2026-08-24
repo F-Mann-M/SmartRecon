@@ -21,6 +21,7 @@ class BankRepository:
             bank_account = self.get_or_create_bank_account(statement_data.bank_name, statement_data.account_number_suffix)
 
             # Create a new StatementFileModel entry
+            print("\n\nSaving statement data to PostgreSQL...")
             statement_file = StatementFileModel(
                 bank_account_id=bank_account.id,
                 file_name=file_name,
@@ -28,9 +29,10 @@ class BankRepository:
                 statement_period=statement_data.statement_period
             )
             self.db_session.add(statement_file)
-            self.db_session.flush()  # Flush to get the statement_file.id
-
+            self.db_session.flush()
+            
             # Add transactions to the database
+            print(f"Saving {len(statement_data.transactions)} transactions to PostgreSQL...")
             for transaction in statement_data.transactions:
                 transaction_model = TransactionModel(
                     vendor_name=transaction.vendor_name,
@@ -68,6 +70,7 @@ class BankRepository:
 
         if bank_account:
             print(f"Bank account {bank_name} with suffix {account_number_suffix} already exists in the database.")
+            return bank_account
 
         # If the bank account does not exist, create a new one
         if not bank_account:
@@ -119,6 +122,12 @@ class BankRepository:
 
         # Convert SQLAlchemy Row objects to dicts for Pydantic parsing
         return [row._asdict() for row in results]
+
+    def get_all_invoices(self) -> List[InvoiceModel]:
+        """
+        Retrieve all invoices from the database.
+        """
+        return self.db_session.query(InvoiceModel).all()
  
 # TODO: Avoid duplicates. currently there a duplicates in database!!! 
 # TODO: Consider adding error handling and logging for database operations to ensure robustness and traceability.
