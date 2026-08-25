@@ -19,7 +19,7 @@ resource "azurerm_network_interface" "nic" {
   ip_configuration {
     name                          = "internal"
     subnet_id                     = azurerm_subnet.snet_compute.id
-    private_ip_address_allocation = "Dynamic"
+    private_ip_address_allocation = "Dynamic" # get ip dynamically from the subnet
     public_ip_address_id          = azurerm_public_ip.vm_public_ip.id
   }
 

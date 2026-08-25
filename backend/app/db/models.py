@@ -1,7 +1,8 @@
+import enum
 import uuid
 from datetime import date, datetime
 from typing import Optional
-from sqlalchemy import String, Numeric, Text, Date, DateTime, ForeignKey, Float
+from sqlalchemy import String, Numeric, Text, Date, DateTime, ForeignKey, Float, Enum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from pgvector.sqlalchemy import Vector
 from db.session import Base
@@ -46,6 +47,7 @@ class TransactionModel(Base):
     vendor_name: Mapped[Optional[str]] = mapped_column(String(255))
     transaction_date: Mapped[date] = mapped_column(Date, nullable=False)
     amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
+    direction: Mapped[str] = mapped_column(String(10), nullable=False)  # "IN" or "OUT"
     currency: Mapped[str] = mapped_column(String(3), default="EUR")
     description: Mapped[str] = mapped_column(Text, nullable=False)
     category: Mapped[Optional[str]] = mapped_column(String(50))

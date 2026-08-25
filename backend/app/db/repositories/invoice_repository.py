@@ -182,10 +182,41 @@ Return the extracted data in JSON format adhering to the InvoiceSchema.
     db.refresh(invoice)
     return invoice
 
+
 def get_invoice_by_hash(db: Session, file_hash: str) -> Optional[InvoiceModel]:
     """Retrieve an invoice from the database by its file hash."""
     return db.query(InvoiceModel).filter_by(file_hash=file_hash).first()
 
 
-def get_all_invoices(db: Session) -> List[dict]:
+def get_all_invoices(db: Session) -> List[InvoiceModel]:
     return db.query(InvoiceModel).all()
+
+
+def get_invoice_details(db: Session, invoice_id: int) -> Optional[InvoiceModel]:
+    """Retrieve detailed information for a specific invoice by its ID."""
+    return db.query(InvoiceModel).filter_by(id=invoice_id).first()
+
+
+def get_invoice_by_filter(
+        self, 
+        vendor_name: str = None, 
+        invoice_date: str = None, 
+        total_amount: float = None,
+        invoice_id: str = None,
+        ) -> List[InvoiceModel]:
+        """
+        Retrieve invoices from the database based on provided filters.
+        """
+        query = self.db_session.query(InvoiceModel)
+
+        if vendor_name:
+            query = query.filter(InvoiceModel.vendor_name.ilike(f"%{vendor_name}%"))
+        if invoice_date:
+            query = query.filter(InvoiceModel.invoice_date == invoice_date)
+        if total_amount:
+            query = query.filter(InvoiceModel.total_amount == total_amount)
+        if invoice_id:
+            query = query.filter(InvoiceModel.id == invoice_id)
+        return query.all()
+    
+    

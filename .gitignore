@@ -228,3 +228,4 @@ infra/terraform/.terraform/providers/registry.terraform.io/hashicorp/azurerm/4.8
 infra/terraform/.terraform.lock.hcl
 infra/terraform/terraform.tfstate
 infra/terraform/terraform.tfstate.backup
+.github/copilot-instructions.md

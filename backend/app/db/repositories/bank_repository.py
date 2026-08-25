@@ -1,7 +1,8 @@
 from db.models import StatementFileModel, TransactionModel, InvoiceModel, ReconciliationModel, BankAccountModel
 from schemas.bank_statement import StatementSchema, TransactionSchema
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional, Tuple
+from datetime import date
 
 class BankRepository:
     def __init__(self, db_session: Session):
@@ -10,6 +11,11 @@ class BankRepository:
     def is_file_already_in_db(self, file_hash: str) -> bool:
         return self.db_session.query(StatementFileModel).filter_by(file_hash=file_hash).first() is not None
 
+    def set_transaction_direction(self, transaction: float) -> str:
+        if transaction < 0:
+            return "OUT"
+        return "IN"
+    
 
     def save_to_postgres(self, statement_data, file_name: str, file_hash: str) -> StatementFileModel:
         """
@@ -33,7 +39,7 @@ class BankRepository:
             
             # Add transactions to the database
             print(f"Saving {len(statement_data.transactions)} transactions to PostgreSQL...")
-            for transaction in statement_data.transactions:
+            for transaction in statement_data.transactions:                
                 transaction_model = TransactionModel(
                     vendor_name=transaction.vendor_name,
                     bank_account_id=bank_account.id,
@@ -44,7 +50,8 @@ class BankRepository:
                     description=transaction.description,
                     category=None,
                     status="PENDING",
-                    balance=transaction.balance
+                    balance=transaction.balance,
+                    direction=self.set_transaction_direction(transaction.amount)
                 )
                 self.db_session.add(transaction_model)
 
@@ -104,6 +111,7 @@ class BankRepository:
                 TransactionModel.description,
                 TransactionModel.status,
                 TransactionModel.balance,
+                TransactionModel.direction,
                 BankAccountModel.bank_name,
                 BankAccountModel.account_number_suffix,
                 StatementFileModel.file_name,
@@ -121,16 +129,82 @@ class BankRepository:
         )
 
         # Convert SQLAlchemy Row objects to dicts for Pydantic parsing
-        return [row._asdict() for row in results]
-
+        return [row._asdict() for row in results] # use _asdict() to convert Row objects to dicts for LLM parsing and Pydantic validation.
+    
     def get_all_invoices(self) -> List[InvoiceModel]:
         """
         Retrieve all invoices from the database.
         """
         return self.db_session.query(InvoiceModel).all()
- 
-# TODO: Avoid duplicates. currently there a duplicates in database!!! 
+    
+    
+    def get_transaction_by_filter(
+        self, 
+        vendor_name: str = None, 
+        transaction_date: date = None, 
+        amount: float = None,
+        direction: str = None, # "IN" or "OUT"
+        category: str = None,
+        status: str = None, # "PENDING", "RECONCILED", "DISPUTED"
+        bank_name: str = None,
+        account_number_suffix: str = None,
+        start_date: date = None,
+        end_date: date = None,
+        ) -> List[dict]:
+        """
+        Retrieve transactions from the database based on provided filters.
+        """
+        query = (
+            self.db_session.query(
+                TransactionModel.id,
+                TransactionModel.transaction_date,
+                TransactionModel.vendor_name,
+                TransactionModel.amount,
+                TransactionModel.currency,
+                TransactionModel.description,
+                TransactionModel.status,
+                TransactionModel.balance,
+                TransactionModel.direction,
+                BankAccountModel.bank_name,
+                BankAccountModel.account_number_suffix,
+                StatementFileModel.file_name,
+                StatementFileModel.statement_period,
+                ReconciliationModel.invoice_id.label("reconciled_invoice_id"),
+                InvoiceModel.vendor_name.label("reconciled_vendor_name"),
+                ReconciliationModel.confidence_score,
+            )
+            .join(BankAccountModel, TransactionModel.bank_account_id == BankAccountModel.id)
+            .outerjoin(StatementFileModel, TransactionModel.statement_file_id == StatementFileModel.id)
+            .outerjoin(ReconciliationModel, TransactionModel.id == ReconciliationModel.transaction_id)
+            .outerjoin(InvoiceModel, ReconciliationModel.invoice_id == InvoiceModel.id)
+        )
+
+        if vendor_name:
+            query = query.filter(TransactionModel.vendor_name.ilike(f"%{vendor_name.lower()}%"))
+        if transaction_date:
+            query = query.filter(TransactionModel.transaction_date == transaction_date)
+        if amount:
+            query = query.filter(TransactionModel.amount == amount)
+        if direction:
+            query = query.filter(TransactionModel.direction == direction)
+        if category:
+            query = query.filter(TransactionModel.category.ilike(f"%{category}%"))
+        if status:
+            query = query.filter(TransactionModel.status == status)
+        if bank_name:
+            query = query.filter(
+                (BankAccountModel.bank_name.ilike(f"%{bank_name}%"))
+            )
+        if account_number_suffix:
+            query = query.filter(
+                BankAccountModel.account_number_suffix.ilike(f"%{account_number_suffix}%")
+            )
+        if start_date and end_date:
+            query = query.filter(TransactionModel.transaction_date.between(start_date, end_date))
+
+        results = query.order_by(TransactionModel.transaction_date.desc()).all()
+        return [row._asdict() for row in results]
+
+
 # TODO: Consider adding error handling and logging for database operations to ensure robustness and traceability.
-# TODO: Add InvoiceModel and ReconciliationModel saving logic
-# TODO: Add process for handling transactions and linking them to invoices with confidence scores in the ReconciliationModel.
-# TODO: Add invoices to invoices table (LLM parsed) and link them to transactions with confidence scores in the ReconciliationModel.
+    

@@ -1,6 +1,6 @@
 from db.models import ReconciliationModel, TransactionModel, InvoiceModel
 import re
-from typing import Tuple, Optional
+from typing import List, Tuple, Optional
 from datetime import timedelta
 from sqlalchemy.orm import Session
 
@@ -88,7 +88,9 @@ def find_best_invoice_match(db: Session, transactions: TransactionModel) -> Tupl
             add_matches_to_reconciliation_table(db=db, transaction=bank_transaction, invoice=match, match_score=1.0, match_type="EXACT_MATCH")
             print(f"Added reconciliation entry for Transaction ID {bank_transaction.id} and Invoice ID {match.id}.")
             
-            return match, 1.0, "EXACT_MATCH"
+            
+            
+            return
     
     except Exception as e:
         print(f"Error while finding matches between invoices and bank transactions:\n{e}")
@@ -96,7 +98,7 @@ def find_best_invoice_match(db: Session, transactions: TransactionModel) -> Tupl
     return None, 0.0, "NO_MATCH_FOUND"
     
     
-def add_matches_to_reconciliation_table(db: Session, transaction: TransactionModel, invoice: InvoiceModel, match_score: float, match_type: str):
+def add_matches_to_reconciliation_table(db: Session, transaction: TransactionModel, invoice: InvoiceModel, match_score: float, match_type: str) -> None:
     """
     Adds a matched transaction and invoice to the reconciliation table.
     """
@@ -104,10 +106,16 @@ def add_matches_to_reconciliation_table(db: Session, transaction: TransactionMod
         reconciliation_entry = ReconciliationModel(
             transaction_id=transaction.id,
             invoice_id=invoice.id,
-            match_score=match_score,
-            match_type=match_type
+            confidence_score=match_score,
+            match_type=match_type,
         )
         db.add(reconciliation_entry)
+        db.flush()
+        
+        # Update the transaction status to "RECONCILED"
+        transaction.status = "RECONCILED"
+        db.add(transaction)
+        
         db.commit()
         print(f"Added reconciliation entry for Transaction ID {transaction.id} and Invoice ID {invoice.id}.")
     except Exception as e:
@@ -125,4 +133,10 @@ def is_match_already_reconciled(db: Session, transaction_id: str, invoice_id: st
     ).first()
     
     return existing_entry is not None
+
+
+def get_all_reconciliation_entries(db: Session) -> List[ReconciliationModel]:
+    return db.query(ReconciliationModel).all()
+
+
     

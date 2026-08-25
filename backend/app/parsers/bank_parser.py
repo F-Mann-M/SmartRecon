@@ -107,10 +107,11 @@ def parse_statement_to_sql_payload(pdf_path: Union[str, Path])-> StatementSchema
         CRITICAL RULES:
         - You MUST include the 'transactions' list field in your JSON response.
         - If no transactions exist on this specific page, set 'transactions': [].
-        - All dates MUST be in standard YYYY-MM-DD format.
-        - Expenses/debits MUST be negative numbers (e.g. -45.50).
-        - Deposits/credits MUST be positive numbers (e.g. 1200.00).
-
+        - All dates MUST be in standard YYYY-MM-DD format. Make sure to convert any other formats to this standard.
+        - make sure the the transaction date is in the correct format and is a valid date. if the date is invalid or cannot be parsed, set it to null in the JSON response.
+        - if the transaction date is in the future, check it again or set it to null in the JSON response. Do not invent or guess dates.
+        - If any transaction fields are missing on this page, return them as null in the JSON response. Do not invent or guess values.
+        
         Page Content:
         {page_text}
         """

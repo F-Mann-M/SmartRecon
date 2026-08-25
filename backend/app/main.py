@@ -12,6 +12,7 @@ import logging
 from fastapi import FastAPI
 
 from api.v1.router import router as api_v1_router
+from api.v1.agent import chat_router as api_v1_agent
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -45,7 +46,8 @@ def create_app() -> FastAPI:
    
 
     # Register API Routers
-    app.include_router(api_v1_router, prefix="/api/router", tags=["API"])
+    app.include_router(api_v1_router, prefix="/api/v1/router", tags=["API"])
+    app.include_router(api_v1_agent, prefix="/api/v1/agent", tags=["API Agent"])
 
     @app.get("/health", tags=["Health"])
     def health_check():
