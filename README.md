@@ -5,6 +5,7 @@ This is an active hands-on project that ingests invoices and bank statements, ma
 
 ## Project Goal:
 SmartRecon — Intelligent Financial Matching & Analytics Agent
+
 SmartRecon is an automated financial reconciliation and analytics system currently in development, built on a hybrid RAG (Retrieval-Augmented Generation) and multi-tool agent architecture.
 
 The core goal of the project is to bridge unstructured document processing (invoices) with structured relational bank data (bank statements) to streamline end-to-end accounting workflows:
