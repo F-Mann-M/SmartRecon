@@ -1,7 +1,7 @@
 # SmartRecon
 
 # RAG & Agentic AI Bank Account Manager
-This repository is an active, hands-on development project that I am building alongside my participation in the [IBM RAG and Agentic AI Professional Certificate on Coursera](https://www.coursera.org/professional-certificates/ibm-rag-and-agentic-ai).
+This is an active hands-on project that ingests invoices and bank statements, matches transactions, and powers a RAG-based financial analysis agent, with Azure infrastructure already in place.
 
 ## Project Goal:
 SmartRecon — Intelligent Financial Matching & Analytics Agent
