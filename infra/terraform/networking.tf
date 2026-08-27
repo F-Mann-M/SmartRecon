@@ -28,12 +28,26 @@ resource "azurerm_subnet" "snet_postgres" {
 
   delegation {
     name = "delegation_postgres"
-
     service_delegation {
       name    = "Microsoft.DBforPostgreSQL/flexibleServers"
       actions = ["Microsoft.Network/virtualNetworks/subnets/join/action"]
     }
   }
+}
+
+# Private DNS Zone for PostgreSQL
+resource "azurerm_private_dns_zone" "postgres_dns_zone" {
+  name                = "${var.prefix}-postgres.private.postgres.database.azure.com" # The private DNS zone for PostgreSQL flexible server
+  resource_group_name = azurerm_resource_group.rg.name
+}
+
+# Private DNS Zone Virtual Network Link
+resource "azurerm_private_dns_zone_virtual_network_link" "postgres_dns_link" {
+  name                  = "${var.prefix}-postgres-dns-link"
+  resource_group_name   = azurerm_resource_group.rg.name
+  private_dns_zone_name = azurerm_private_dns_zone.postgres_dns_zone.name
+  virtual_network_id    = azurerm_virtual_network.vnet.id
+  # registration_enabled = false
 }
 
 # Endpoints for Storage and Foundry
@@ -115,8 +129,8 @@ resource "azurerm_network_security_group" "nsg_postgres" {
 
 resource "azurerm_network_security_group" "nsg_endpoints" {
   name                = "smartrecon-nsg-endpoints"
-  location            = var.location
-  resource_group_name = var.resource_group_name
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
 
   security_rule {
     name                       = "Allow-VNet-Internal"

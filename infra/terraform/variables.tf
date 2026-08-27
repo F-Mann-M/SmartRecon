@@ -21,3 +21,19 @@ variable "environment" {
 variable "prefix" {
   description = "Prefix for resource names"
 }
+
+variable "db_admin_user" {
+  description = "Administrator username for PostgreSQL Flexible Server"
+}
+
+variable "db_admin_password" {
+  description = "Administrator password for PostgreSQL Flexible Server"
+}
+
+variable "public_key" {
+  description = "Public SSH key for VM access"
+}
+
+variable "subscription_id" {
+  description = "Azure subscription ID"
+}
