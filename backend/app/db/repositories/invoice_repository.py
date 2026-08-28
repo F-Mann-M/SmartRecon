@@ -1,24 +1,13 @@
-from langchain_postgres import PGVector
 from typing import List, Optional
 from langchain_core.documents import Document
 from sqlalchemy.orm import Session
 import os
-from langchain_ollama import ChatOllama
 
-from core.llm.llm_client import local_embeddings
-from core.config import settings
+from core.llm.llm_client import structured_llm as llm
+from db.vector_store import get_invoice_vector_store
 from db.models import InvoiceModel
+from db.repositories.utilities import compute_file_hash
 from schemas.invoice import InvoiceSchema
-
-
-# TODO: Consider moving vector_store initialization to a separate module or configuration file for better maintainability and testability.
-
-vector_store = PGVector(
-    embeddings=local_embeddings,
-    collection_name="invoice",
-    connection=settings.DATABASE_URL,
-    use_jsonb=True,
-)
 
 
 def file_already_embedded(file_path: Optional[str] = None, file_hash: Optional[str] = None) -> bool:
@@ -36,8 +25,9 @@ def file_already_embedded(file_path: Optional[str] = None, file_hash: Optional[s
         if not file_path:
             raise ValueError("Either file_path or file_hash must be provided")
         file_hash = compute_file_hash(file_path)
+    vector_store = get_invoice_vector_store()
 
-    # Try exact match by file_hash using vector_store's filter. Use a cheap k=1 query — we only need to know if any record exists.
+    # Try exact match by file_hash using vector_store's filter.
     try:
         results = vector_store.similarity_search(query=".", k=1, filter={"file_hash": file_hash}) # check if any document with this hash exists
         if results:
@@ -74,6 +64,7 @@ def add_chunks_to_collection(documents: List[Document], file_path: Optional[str]
     if not documents:
         print("No documents provided")
         return
+    vector_store = get_invoice_vector_store()
 
     # check for duplicates before embedding
     try:
@@ -114,6 +105,7 @@ def similarity_search(query: str, n_results: int = 3, where_filter: dict = None)
     format output to downstream to llm
     """
     print("\nStart similarity search...")
+    vector_store = get_invoice_vector_store()
 
     results = vector_store.similarity_search(
          query=query,
@@ -144,7 +136,7 @@ def parse_and_store_invoice_sql(db: Session, raw_text: str, file_hash: str, file
     Parses the raw text of an invoice, structures data by using a LLM and store structured data in the database.
     Returns the created InvoiceModel instance.
     """
-    llm = ChatOllama(model="llama3.1:8b", temperature=0)
+
     structured_llm = llm.with_structured_output(InvoiceSchema)
 
     prompt = f"""

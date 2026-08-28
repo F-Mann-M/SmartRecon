@@ -229,3 +229,5 @@ infra/terraform/.terraform.lock.hcl
 infra/terraform/terraform.tfstate
 infra/terraform/terraform.tfstate.backup
 .github/copilot-instructions.md
+backend/.env.local
+backend/.env.cloud

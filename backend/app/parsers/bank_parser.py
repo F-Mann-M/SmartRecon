@@ -2,22 +2,31 @@ from langchain_community.document_loaders import PDFPlumberLoader
 import langchain
 from typing import Union
 from datetime import date
-from langchain_ollama import ChatOllama
 from pathlib import Path
 
 from core.config import settings
+from core.llm.llm_client import structured_llm
 from db.repositories.bank_repository import BankRepository
 from db.repositories.utilities import compute_file_hash
 from db.session import get_db
 from schemas.bank_statement import StatementSchema
 
 
-
-
 bank_repo = BankRepository(db_session=get_db())  # Initialize the repository with a database session
 langchain.debug = True  # Enable debug mode for LangChain to get detailed logs
 
-def process_statement_folder(folder_path: str = settings.RAW_STATEMENT_DIR):
+def get_raw_statement_dir() -> Path:
+    """Returns the path or the blob storage directory where raw bank statement PDFs are stored."""
+    if settings.ENVIRONMENT == "cloud":
+        if not settings.AZURE_STORAGE_CONNECTION_STRING:
+            raise ValueError("AZURE_STORAGE_CONNECTION_STRING is not set in the environment variables.")
+        return Path(settings.AZURE_STORAGE_CONNECTION_STRING)
+    return Path(settings.RAW_STATEMENT_DIR)  # Local directory for raw bank statements
+
+
+def process_statement_folder(folder_path: str = None):
+    if folder_path is None:
+        folder_path = str(get_raw_statement_dir())
     """Processes all bank statement PDFs in the specified folder, extracting structured data and saving it to PostgreSQL."""
     directory = Path(folder_path) # get the directory path as a Path object
     pdf_files = list(directory.glob("*.pdf", case_sensitive=False))
@@ -29,10 +38,6 @@ def process_statement_folder(folder_path: str = settings.RAW_STATEMENT_DIR):
     if not pdf_files:
         print(f"No PDF files found in {directory.resolve()}")
         return
-
-    # Initialize Ollama model once
-    # TODO: move llm initialization to llm_client.py and import it here for consistency?!
-    llm = ChatOllama(model="gemma4", temperature=0)
 
     print(f"Found {len(pdf_files)} statement(s) to process in {directory.name}\n")
 
@@ -82,10 +87,7 @@ def parse_statement_to_sql_payload(pdf_path: Union[str, Path])-> StatementSchema
     if not docs:
         raise ValueError(f"No pages or text extracted from {path_str}")
 
-    # Initialize LLM if not injected by caller (llama3.1:8b recommended for reliable schema adherence)
-    llm = ChatOllama(model="gemma2:9b", temperature=0, verbose=True)
-
-    structured_llm = llm.with_structured_output(StatementSchema)
+    structured_model = structured_llm.with_structured_output(StatementSchema)
 
     combined_transactions = []
     metadata = {
@@ -118,7 +120,7 @@ def parse_statement_to_sql_payload(pdf_path: Union[str, Path])-> StatementSchema
 
         try:
             print(f"\nParsing page {page_idx} of {len(docs)}...")
-            page_data: StatementSchema = structured_llm.invoke(prompt)
+            page_data: StatementSchema = structured_model.invoke(prompt)
 
             # Capture metadata from the first page that contains it
             if page_data.bank_name and not metadata["bank_name"]:
@@ -143,5 +145,3 @@ def parse_statement_to_sql_payload(pdf_path: Union[str, Path])-> StatementSchema
         statement_period=metadata["statement_period"] or "Unknown",
         transactions=combined_transactions,
     )
-
-

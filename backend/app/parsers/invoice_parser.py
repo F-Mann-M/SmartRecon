@@ -11,9 +11,19 @@ from db.models import InvoiceModel
 from db.session import get_db
 
 
-def load_from_directory(dir_path: str = settings.RAW_INVOICE_DIR):
-    """loads PDF form data/raw and converts them to LangChain Documents"""
+def get_raw_invoice_dir() -> Path:
+    """Returns the path or the blob storage directory where raw invoice PDFs are stored."""
+    if settings.ENVIRONMENT == "cloud":
+        if not settings.AZURE_STORAGE_CONNECTION_STRING:
+            raise ValueError("AZURE_STORAGE_CONNECTION_STRING is not set in the environment variables.")
+        return Path(settings.AZURE_STORAGE_CONNECTION_STRING)
+    return Path(settings.RAW_INVOICE_DIR)
 
+def load_from_directory(dir_path: str = None):
+    """adds PDF form data/raw and converts them to LangChain Documents"""
+    if dir_path is None:
+            dir_path = str(get_raw_invoice_dir())
+            
     try:
         print("start loading PDF...")
         loader = PyPDFDirectoryLoader(
