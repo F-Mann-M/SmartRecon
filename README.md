@@ -19,10 +19,11 @@ Aiming to integrate a LangGraph orchestration layer that enables an AI agent to 
 Combining traditional PostgreSQL tables for precise relational record-keeping with vector embeddings to enable semantic search across unstructured invoices, suppliers, and bank transaction metadata.
 
 
-## Models
+## Cloud infrastructure
+The Azure deployment is provisioned with Terraform and provides a secure, private networking setup for SmartRecon. It includes an Azure resource group, virtual network, network security controls, Azure AI Foundry for model access, a managed storage account, and a Linux compute VM for running the application stack with identity-based access to Azure services.
+
+## Models for local use
 Currently this project is using a local model via OLLama. https://docs.langchain.com/oss/python/integrations/chat/ollama
-
-
 
 # Start Postgres locally
 run colima 
