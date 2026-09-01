@@ -231,3 +231,4 @@ infra/terraform/terraform.tfstate.backup
 .github/copilot-instructions.md
 backend/.env.local
 backend/.env.cloud
+infra/.env.local

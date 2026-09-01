@@ -19,7 +19,7 @@ def get_raw_invoice_dir() -> Path:
         return Path(settings.AZURE_STORAGE_CONNECTION_STRING)
     return Path(settings.RAW_INVOICE_DIR)
 
-def load_from_directory(dir_path: str = None):
+async def load_from_directory(dir_path: str = None):
     """adds PDF form data/raw and converts them to LangChain Documents"""
     if dir_path is None:
             dir_path = str(get_raw_invoice_dir())
@@ -44,7 +44,7 @@ def load_from_directory(dir_path: str = None):
         print(f"Error during loading PDF: {e}")
 
 
-def split_document(documents, chunk_size=1000, chunk_overlap=200):
+async def split_document(documents, chunk_size=1000, chunk_overlap=200):
     """Takes in a document, split its content into chunks, and return the chunks."""
 
     text_splitter = RecursiveCharacterTextSplitter(
@@ -55,9 +55,9 @@ def split_document(documents, chunk_size=1000, chunk_overlap=200):
     return chunks
 
 
-def load_and_process_pdf():
+async def load_and_process_pdf():
     """Loads PDFs from directory, processes each file individually, and avoids re-embedding existing files."""
-    pages = load_from_directory()
+    pages = await load_from_directory()
     if not pages:
         return
 
@@ -77,18 +77,18 @@ def load_and_process_pdf():
             file_hash = compute_file_hash(file_path)
 
             #  Check and Save Relational Data in PostgreSQL
-            with get_db() as db:
-                existing_invoice = db.query(InvoiceModel).filter_by(file_hash=file_hash).first()
+            async with await get_db() as db:
+                existing_invoice = await db.query(InvoiceModel).filter_by(file_hash=file_hash).first()
                 if not existing_invoice:
                     # Combine all page contents into full raw text for context-complete LLM parsing
                     full_raw_text = "\n\n".join([doc.page_content for doc in docs])
-                    parse_and_store_invoice_sql(db=db, raw_text=full_raw_text, file_path=file_path, file_hash=file_hash)
+                    await parse_and_store_invoice_sql(db=db, raw_text=full_raw_text, file_path=file_path, file_hash=file_hash)
                 else:
                     print(f"Invoice {file_name} already exists in relational database.")
 
             # Chunk and Embed into PGVector Collection
-            chunks = split_document(docs)
-            add_chunks_to_collection(documents=chunks, file_path=file_path, file_hash=file_hash)
+            chunks = await split_document(docs)
+            await add_chunks_to_collection(documents=chunks, file_path=file_path, file_hash=file_hash)
 
         except Exception as e:
             print(f"Failed to process invoice {file_name}: {e}")

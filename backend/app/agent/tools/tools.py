@@ -36,7 +36,7 @@ def search_knowledge_base(query: str) -> str:
     return results
 
 @tool
-def get_all_transactions(
+async def get_all_transactions(
         vendor_name: str = Field(default=None, description="Filter by vendor name"),
         transaction_date: date = Field(default=None, description="Filter by transaction date in YYYY-MM-DD format"),
         amount: float = Field(default=None, description="Filter by transaction amount"),
@@ -66,7 +66,7 @@ def get_all_transactions(
         A list of dictionaries, each representing a transaction with its details.
     """
 
-    with get_db() as db:
+    with await get_db() as db:
         bank_repo = BankRepository(db)
         transactions = bank_repo.get_transaction_by_filter(
             vendor_name=vendor_name,

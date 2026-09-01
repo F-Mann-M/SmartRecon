@@ -17,3 +17,10 @@ resource "azurerm_storage_container" "containers" {
     container_access_type = "private"
 }
 
+# Enable Microsoft Defender for Storage to protect against malware and other threats
+resource "azurerm_security_center_storage_defender" "storage_defender" {
+  storage_account_id                          = azurerm_storage_account.storage.id
+  malware_scanning_on_upload_enabled          = true
+  malware_scanning_on_upload_cap_gb_per_month = 5000
+  sensitive_data_discovery_enabled            = false
+}

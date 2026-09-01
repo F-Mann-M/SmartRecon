@@ -1,7 +1,7 @@
 # SmartRecon
 
 # RAG & Agentic AI Bank Account Manager
-This is an active hands-on project that ingests invoices and bank statements, matches transactions, and powers a RAG-based financial analysis agent, with Azure infrastructure already in place.
+This is an active hands-on project that ingests invoices and bank statements, matches transactions, and powers a RAG-based financial analysis agent, with Azure infrastructure already in place. This project can also be used locally.
 
 ## Project Goal:
 ### SmartRecon — Intelligent Financial Matching & Analytics Agent
@@ -25,7 +25,8 @@ The Azure deployment is provisioned with Terraform and provides a secure, privat
 ## Models for local use
 Currently this project is using a local model via OLLama. https://docs.langchain.com/oss/python/integrations/chat/ollama
 
-# Start Postgres locally
+
+## How to start Postgres locally
 run colima 
 ```bash
 colima start
