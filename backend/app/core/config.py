@@ -3,9 +3,11 @@ from pathlib import Path
 from typing import Literal
 import os
 
-APP_ENV = os.getenv("APP_ENV", "cloud")  # "local" or "cloud"
-ENV_FILE = f".env.{APP_ENV}"
+
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
+APP_ENV = os.getenv("APP_ENV", "cloud")  # set env variable APP_ENV by default to "cloud". APP_ENV=local python backend/app/main.py to set to local environment
+ENV_FILE = BASE_DIR / f".env.{APP_ENV}"  # Load environment variables from .env.local or .env.cloud based on APP_ENV
+
 
 class Settings(BaseSettings): 
     """ Application settings loaded from environment variables and .env file """
@@ -20,12 +22,17 @@ class Settings(BaseSettings):
     AZURE_EMBEDDING_API_VERSION: str = "2024-02-01"
 
     # Local Models Settings (Direct Ollama)
-    LOCAL_CHAT_MODEL: str = "gemma2:9b"
+    LOCAL_CHAT_MODEL: str = "llama3.1:8b"
     LOCAL_EMBEDDING_MODEL: str = "embeddinggemma"
     LOCAL_STRUCTURED_MODEL: str = "llama3.1:8b"
 
-    # Local Database Settings
-    DATABASE_URL: str = f"postgresql+psycopg://postgres:postgrespassword@localhost:5432/smartrecon"
+    # Database Settings
+    DB_USER: str
+    DB_PASSWORD: str
+    DB_HOST: str = "localhost"
+    DB_PORT: int = 5432
+    DB_NAME: str = "smartrecon"
+    DATABASE_URL: str
 
     RAW_INVOICE_DIR: str = f"{BASE_DIR}/data/raw/invoices"
     RAW_STATEMENT_DIR: str = f"{BASE_DIR}/data/raw/bank_statements" 

@@ -5,8 +5,16 @@ from typing import Optional
 from sqlalchemy import String, Numeric, Text, Date, DateTime, ForeignKey, Float, Enum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from pgvector.sqlalchemy import Vector
-from db.session import Base
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.asyncio import AsyncEngine
 
+
+Base = declarative_base()
+
+async def create_tables(engine: AsyncEngine) -> None:
+    """Creates all tables in the database."""
+    async with engine.begin() as connection:
+        await connection.run_sync(Base.metadata.create_all)
 
 # BankAccount model for storing bank account data
 class BankAccountModel(Base):

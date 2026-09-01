@@ -1,12 +1,13 @@
 
-from db.models import TransactionModel
-from agent.chat_agent import AgentManager
+from sqlalchemy import select
+from db.models import TransactionModel, create_tables
 from parsers.invoice_parser import load_and_process_pdf
-from db.session import Base, engine, get_db
+from db.session import engine, get_db
 from parsers.bank_parser import process_statement_folder
 from db.repositories.reconciliation_repository import find_best_invoice_match
 
 import logging
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from api.v1.router import router as api_v1_router
@@ -17,29 +18,41 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-# create Tables
-Base.metadata.create_all(engine)
+async def run_startup_pipeline() -> None:
+    """Runs table creation, ingestion, and reconciliation once at app startup."""
+    # create Tables
+    await create_tables(engine)
 
-# loads pdf and stores in PGVector store
-load_and_process_pdf()
+    # loads pdf and stores in PGVector store
+    await load_and_process_pdf()
 
-# loads bank statements from a directory, parses them, and stores in PostgreSQL
-process_statement_folder()
+    # loads bank statements from a directory, parses them, and stores in PostgreSQL
+    await process_statement_folder()
 
-# reconciliation
-with get_db() as db:
-    print(f"\nGet all transactions...")
-    transaction = db.query(TransactionModel).all()
-    find_best_invoice_match(db=db, transactions=transaction)
-    
+    # reconciliation
+    async with get_db() as db:
+        print(f"\nGet all transactions...")
+        result = await db.execute(select(TransactionModel))
+        transaction = result.scalars().all()
+        await find_best_invoice_match(db=db, transactions=transaction)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Runs startup pipeline in the same event loop uvicorn uses, before serving requests."""
+    await run_startup_pipeline()
+    yield
+    # TODO: add any shutdown logic here, if needed in the future.
 
 def create_app() -> FastAPI:
+    """Creates and configures the FastAPI application."""
     app = FastAPI(
         title="smartRecon API",
         description="Backend API for bank statement and invoice parsing, vector search, and reconciliation.",
         version="1.0.0",
         docs_url="/docs",
         redoc_url="/redoc",
+        lifespan=lifespan,
     )
    
 

@@ -22,7 +22,7 @@ def calculator(expression: str) -> str:
 
 
 @tool
-def search_knowledge_base(query: str) -> str:
+async def search_knowledge_base(query: str) -> str:
     """
     Search the internal knowledge base for relevant document chunks and context.
     Use this tool whenever you need to look up information from uploaded invoices, 
@@ -31,8 +31,8 @@ def search_knowledge_base(query: str) -> str:
     Args:
         query: The semantic search query string.
     """
-    results = similarity_search(query)
- 
+    results = await similarity_search(query)
+
     return results
 
 @tool
@@ -56,19 +56,20 @@ async def get_all_transactions(
         vendor_name: Optional; Filter transactions by vendor name.
         transaction_date: Optional; Filter transactions by date in YYYY-MM-DD format.
         amount: Optional; Filter transactions by amount.
-        direction: Optional; Filter transactions by direction (IN or OUT). it only
+        direction: Optional; Filter transactions by direction (IN or OUT). It only accepts "IN" or "OUT".
         category: Optional; Filter transactions by category.
         status: Optional; Filter transactions by status (e.g., PENDING, RECONCILED, DISPUTED).
         bank_name: Optional; Filter transactions by bank name.
         account_number_suffix: Optional; Filter transactions by the last few digits of the account number.
-        time_period: Optional; Filter transactions by statement period as a tuple of start and end dates in YYYY-MM-DD format.
+        start_date: Optional; Filter transactions by start date in YYYY-MM-DD format.
+        end_date: Optional; Filter transactions by end date in YYYY-MM-DD format.
     Returns:
         A list of dictionaries, each representing a transaction with its details.
     """
 
-    with await get_db() as db:
+    async with get_db() as db:
         bank_repo = BankRepository(db)
-        transactions = bank_repo.get_transaction_by_filter(
+        transactions = await bank_repo.get_transaction_by_filter(
             vendor_name=vendor_name,
             transaction_date=transaction_date,
             amount=amount,

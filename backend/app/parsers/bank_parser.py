@@ -12,7 +12,6 @@ from db.session import get_db
 from schemas.bank_statement import StatementSchema
 
 
-bank_repo = BankRepository(db_session=get_db())  # Initialize the repository with a database session
 langchain.debug = True  # Enable debug mode for LangChain to get detailed logs
 
 def get_raw_statement_dir() -> Path:
@@ -24,7 +23,7 @@ def get_raw_statement_dir() -> Path:
     return Path(settings.RAW_STATEMENT_DIR)  # Local directory for raw bank statements
 
 
-def process_statement_folder(folder_path: str = None):
+async def process_statement_folder(folder_path: str = None):
     if folder_path is None:
         folder_path = str(get_raw_statement_dir())
     """Processes all bank statement PDFs in the specified folder, extracting structured data and saving it to PostgreSQL."""
@@ -49,14 +48,14 @@ def process_statement_folder(folder_path: str = None):
             file_hash = compute_file_hash(file_path)
 
             # check if file is already in database
-            with get_db() as db:
+            async with get_db() as db:
                 bank_repo = BankRepository(db_session=db)
-                if bank_repo.is_file_already_in_db(file_hash):
+                if await bank_repo.is_file_already_in_db(file_hash):
                     print(f"Skipping {file_path.name} — already present in database.\n")
                     continue
            
             # Parse statement to structured Pydantic object
-            statement_data: StatementSchema = parse_statement_to_sql_payload(file_path)
+            statement_data: StatementSchema = await parse_statement_to_sql_payload(file_path)
 
             print(f"\n\nSuccessfully parsed {file_path.name} to structured data.")
             print(f"Bank: {statement_data.bank_name}")
@@ -65,9 +64,9 @@ def process_statement_folder(folder_path: str = None):
             print(f"Extracted {len(statement_data.transactions)} transaction(s).")
 
             # Save statement_data to PostgreSQL (SQLAlchemy / psycopg)
-            with get_db() as db:
+            async with get_db() as db:
                 bank_repo = BankRepository(db_session=db)
-                bank_repo.save_to_postgres(statement_data, file_name=file_path.name, file_hash=file_hash)
+                await bank_repo.save_to_postgres(statement_data, file_name=file_path.name, file_hash=file_hash)
 
             print(f"Successfully processed and stored {file_path.name}\n")
 
@@ -76,7 +75,7 @@ def process_statement_folder(folder_path: str = None):
 
 
 
-def parse_statement_to_sql_payload(pdf_path: Union[str, Path])-> StatementSchema:
+async def parse_statement_to_sql_payload(pdf_path: Union[str, Path])-> StatementSchema:
     """
     Parses a bank statement PDF page-by-page and returns consolidated structured data.
     """

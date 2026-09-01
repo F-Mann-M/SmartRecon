@@ -13,9 +13,9 @@ class AgentManager():
             checkpointer=InMemorySaver(),
         )
         
-    def run_agent_stream(self, user_input):
+    async def run_agent_stream(self, user_input):
         try:
-            stream = self.agent.stream_events(
+            stream = await self.agent.stream_events(
                 {"messages": [{"role": "user", "content": user_input}]},
                 config=self.config,
                 version="v3",
@@ -35,15 +35,15 @@ class AgentManager():
                     print(delta, end="", flush=True)
                 print(f"\nTool Result: {item.output}")
 
-        final_state = stream.output
+        final_state = await stream.output
 
-    def run_agent(self, user_input):
+    async def run_agent(self, user_input):
         """
         Run the agent with the given user input and return the response.
         It's meant to be used in the Gradio interface where the response is returned as a string.
         """
         try:
-            response = self.agent.invoke(
+            response = await self.agent.ainvoke(
                 {"messages": [{"role": "user", "content": user_input}]},
                 config=self.config,
                 version="v2",

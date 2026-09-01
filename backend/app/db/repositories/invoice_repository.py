@@ -1,6 +1,6 @@
 from typing import List, Optional
 from langchain_core.documents import Document
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 import os
 
 from core.llm.llm_client import structured_llm as llm
@@ -10,7 +10,7 @@ from db.repositories.utilities import compute_file_hash
 from schemas.invoice import InvoiceSchema
 
 
-def file_already_embedded(file_path: Optional[str] = None, file_hash: Optional[str] = None) -> bool:
+async def file_already_embedded(file_path: Optional[str] = None, file_hash: Optional[str] = None) -> bool:
     """Return True if any documents with the given file_hash already exist in the vector store.
 
     Accepts either a file_path or a precomputed file_hash. If both provided, file_hash is used.
@@ -50,7 +50,7 @@ def file_already_embedded(file_path: Optional[str] = None, file_hash: Optional[s
     return False
 
 
-def add_chunks_to_collection(documents: List[Document], file_path: Optional[str] = None, file_hash: Optional[str] = None) -> None:
+async def add_chunks_to_collection(documents: List[Document], file_path: Optional[str] = None, file_hash: Optional[str] = None) -> None:
     """
     Takes in a list of LangChain Documents, generate embeddings, and insert them into the PGVector.
 
@@ -70,7 +70,7 @@ def add_chunks_to_collection(documents: List[Document], file_path: Optional[str]
     try:
         already = False
         if file_hash or file_path:
-            already = file_already_embedded(file_path=file_path, file_hash=file_hash)
+            already = await file_already_embedded(file_path=file_path, file_hash=file_hash)
         if already:
             print("File already embedded — skipping embedding.")
             return
@@ -94,12 +94,12 @@ def add_chunks_to_collection(documents: List[Document], file_path: Optional[str]
                 meta["file_name"] = os.path.basename(file_path)
             doc.metadata = meta
 
-    vector_store.add_documents(documents=documents)
+    await vector_store.add_documents(documents=documents)
 
     print("Chunks successfully embedded")
 
 
-def similarity_search(query: str, n_results: int = 3, where_filter: dict = None) -> list:
+async def similarity_search(query: str, n_results: int = 3, where_filter: dict = None) -> list:
     """
     Takes in query and execute basic similarity search
     format output to downstream to llm
@@ -107,7 +107,7 @@ def similarity_search(query: str, n_results: int = 3, where_filter: dict = None)
     print("\nStart similarity search...")
     vector_store = get_invoice_vector_store()
 
-    results = vector_store.similarity_search(
+    results = await vector_store.similarity_search(
          query=query,
          k=n_results,
          filter=where_filter
@@ -131,7 +131,7 @@ def similarity_search(query: str, n_results: int = 3, where_filter: dict = None)
     return "\n\n".join(context_blocks)
 
 
-def parse_and_store_invoice_sql(db: Session, raw_text: str, file_hash: str, file_path: str) -> InvoiceModel:
+async def parse_and_store_invoice_sql(db: AsyncSession, raw_text: str, file_hash: str, file_path: str) -> InvoiceModel:
     """
     Parses the raw text of an invoice, structures data by using a LLM and store structured data in the database.
     Returns the created InvoiceModel instance.
@@ -170,27 +170,27 @@ Return the extracted data in JSON format adhering to the InvoiceSchema.
         print(f"{field}: {value}")
 
     db.add(invoice)
-    db.commit()
-    db.refresh(invoice)
+    await db.commit()
+    await db.refresh(invoice)
     return invoice
 
 
-def get_invoice_by_hash(db: Session, file_hash: str) -> Optional[InvoiceModel]:
+async def get_invoice_by_hash(db: AsyncSession, file_hash: str) -> Optional[InvoiceModel]:
     """Retrieve an invoice from the database by its file hash."""
-    return db.query(InvoiceModel).filter_by(file_hash=file_hash).first()
+    return await db.execute(select(InvoiceModel).filter_by(file_hash=file_hash)).scalars().first()
 
 
-def get_all_invoices(db: Session) -> List[InvoiceModel]:
-    return db.query(InvoiceModel).all()
+async def get_all_invoices(db: AsyncSession) -> List[InvoiceModel]:
+    return await db.execute(select(InvoiceModel)).scalars().all()
 
 
-def get_invoice_details(db: Session, invoice_id: int) -> Optional[InvoiceModel]:
+async def get_invoice_details(db: AsyncSession, invoice_id: int) -> Optional[InvoiceModel]:
     """Retrieve detailed information for a specific invoice by its ID."""
-    return db.query(InvoiceModel).filter_by(id=invoice_id).first()
+    return await db.execute(select(InvoiceModel).filter_by(id=invoice_id)).scalars().first()
 
 
-def get_invoice_by_filter(
-        self, 
+async def get_invoice_by_filter(
+        db: AsyncSession,
         vendor_name: str = None, 
         invoice_date: str = None, 
         total_amount: float = None,
@@ -199,16 +199,16 @@ def get_invoice_by_filter(
         """
         Retrieve invoices from the database based on provided filters.
         """
-        query = self.db_session.query(InvoiceModel)
+        select_invoice_model = select(InvoiceModel)
 
         if vendor_name:
-            query = query.filter(InvoiceModel.vendor_name.ilike(f"%{vendor_name}%"))
+            query = select_invoice_model.filter(InvoiceModel.vendor_name.ilike(f"%{vendor_name}%"))
         if invoice_date:
-            query = query.filter(InvoiceModel.invoice_date == invoice_date)
+            query = select_invoice_model.filter(InvoiceModel.invoice_date == invoice_date)
         if total_amount:
-            query = query.filter(InvoiceModel.total_amount == total_amount)
+            query = select_invoice_model.filter(InvoiceModel.total_amount == total_amount)
         if invoice_id:
-            query = query.filter(InvoiceModel.id == invoice_id)
-        return query.all()
+            query = select_invoice_model.filter(InvoiceModel.id == invoice_id)
+        return await db.execute(query).scalars().all()
     
     
