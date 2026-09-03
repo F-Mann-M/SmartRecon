@@ -77,5 +77,11 @@ resource "azurerm_private_endpoint" "foundry_pe" {
     name                 = "foundry-dns-zone-group"
     private_dns_zone_ids = [azurerm_private_dns_zone.cognitiveservices_dns.id]
   }
+
+  depends_on = [
+    azurerm_private_dns_zone_virtual_network_link.cognitiveservices_dns_link,
+    azurerm_cognitive_deployment.embedding,
+    azurerm_cognitive_deployment.reasoning_agent
+  ]
 }
 

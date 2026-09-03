@@ -4,24 +4,42 @@ resource "azurerm_postgresql_flexible_server" "postgres" {
   resource_group_name    = azurerm_resource_group.rg.name
   location               = azurerm_resource_group.rg.location
   version                = "16"
-  delegated_subnet_id    = azurerm_subnet.snet_postgres.id 
-  private_dns_zone_id    = azurerm_private_dns_zone.postgres_dns_zone.id
+  
   public_network_access_enabled = false
   
   administrator_login    = var.db_admin_user
   administrator_password = var.db_admin_password
 
-  sku_name   = "B_Standard_B1ms" # Cost-effective burstable tier for dev
-  storage_mb = 32768             # 32 GB minimum
+  sku_name   = "B_Standard_B1ms"
+  storage_mb = 32768
 
   backup_retention_days = 7
   zone                  = "1"
 
   tags = local.common_tags
-
-  depends_on = [azurerm_private_dns_zone_virtual_network_link.postgres_dns_link]
 }
 
+# Private Endpoint for PostgreSQL
+resource "azurerm_private_endpoint" "postgres_endpoint" {
+  name                = "${var.prefix}-psql-pe"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  subnet_id           = azurerm_subnet.snet_endpoints.id
+
+  private_service_connection {
+    name                           = "${var.prefix}-psql-psc"
+    private_connection_resource_id = azurerm_postgresql_flexible_server.postgres.id
+    is_manual_connection           = false
+    subresource_names              = ["postgresqlServer"]
+  }
+
+  private_dns_zone_group {
+    name                 = "postgres-dns-zone-group"
+    private_dns_zone_ids = [azurerm_private_dns_zone.postgres_dns_zone.id]
+  }
+
+  tags = local.common_tags
+}
 
 # Create Application Database
 resource "azurerm_postgresql_flexible_server_database" "app_db" {
