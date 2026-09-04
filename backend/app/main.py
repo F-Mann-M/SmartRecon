@@ -3,6 +3,7 @@ from sqlalchemy import select
 from db.models import TransactionModel, create_tables
 from parsers.invoice_parser import load_and_process_pdf
 from db.session import engine, get_db
+from core.config import settings
 from parsers.bank_parser import process_statement_folder
 from db.repositories.reconciliation_repository import find_best_invoice_match
 
@@ -53,6 +54,7 @@ def create_app() -> FastAPI:
         docs_url="/docs",
         redoc_url="/redoc",
         lifespan=lifespan,
+        debug=False if settings.ENVIRONMENT == "cloud" else True
     )
    
 

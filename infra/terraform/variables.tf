@@ -16,6 +16,7 @@ variable "azurerm_virtual_network" {
 # developer ip for ssh access to vmq and for frontend access to the webapp
 variable "my_ip" {
   description = "IP address of the administrative machine"
+  sensitive   = true
 }
 
 # Current environment dev
@@ -30,20 +31,24 @@ variable "prefix" {
 # Database variables
 variable "db_admin_user" {
   description = "Administrator username for PostgreSQL Flexible Server"
+  sensitive   = true
 }
 
 variable "db_admin_password" {
   description = "Administrator password for PostgreSQL Flexible Server"
+  sensitive   = true
 }
 
 # Public SSH key for VM access
 variable "public_key" {
   description = "Public SSH key for VM access"
+  sensitive   = true
 }
 
 # Azure subscription ID
 variable "subscription_id" {
   description = "Azure subscription ID"
+  sensitive   = true
 }
 
 
@@ -58,3 +63,8 @@ variable "github_repository" {
   description = "GitHub repository name"
 }
 
+variable "jwt_secret_key" {
+  type        = string
+  description = "JWT signing secret for authentication"
+  sensitive   = true
+}

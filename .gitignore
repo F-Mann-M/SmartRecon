@@ -232,3 +232,6 @@ infra/terraform/terraform.tfstate.backup
 backend/.env.local
 backend/.env.cloud
 infra/.env.local
+infra/terraform/.env.local
+infra/terraform/.terraform
+

@@ -32,14 +32,19 @@ class Settings(BaseSettings):
     DB_HOST: str = "localhost"
     DB_PORT: int = 5432
     DB_NAME: str = "smartrecon"
-    DATABASE_URL: str
-
+   
     RAW_INVOICE_DIR: str = f"{BASE_DIR}/data/raw/invoices"
     RAW_STATEMENT_DIR: str = f"{BASE_DIR}/data/raw/bank_statements" 
     
     # Cloud Storage Settings (Azure Blob Storage)
     AZURE_STORAGE_CONNECTION_STRING: str | None = None
 
+    @property
+    def DATABASE_URL(self) -> str:
+        if self.ENVIRONMENT == "cloud":
+            return f"postgresql+asyncpg://{self.DB_USER}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+        return f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+    
     model_config = SettingsConfigDict(
         env_file = ENV_FILE,
         env_file_encoding = "utf-8",

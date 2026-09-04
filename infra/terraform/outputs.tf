@@ -43,3 +43,8 @@ output "azure_subscription_id" {
   value       = data.azurerm_client_config.current.subscription_id
   description = "Set as AZURE_SUBSCRIPTION_ID in GitHub secrets"
 }
+
+# Output the Key Vault Name. There is no User Authentication yet. 
+#   value       = azurerm_key_vault.kv.name
+#   description = "Name of the Azure Key Vault"
+# }
